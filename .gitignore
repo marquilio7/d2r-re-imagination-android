@@ -62,3 +62,4 @@ gmon.out
 *.wav
 SDL2.dll
 d2port.exe
+d2port.exe.bak

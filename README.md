@@ -22,6 +22,81 @@ original game's 2D files.
 > [Known bugs and what is missing](#known-bugs-and-what-is-missing)). If you
 > find one, please open an issue.
 
+## Compilar y jugar (este fork: PC + Android)
+
+Todo el circuito usa una carpeta **`data/` en la raíz del repo** (la data ya
+preparada, ~2 GB; se genera con el importador del release de Windows a partir
+de tu copia de Diablo II: Resurrected).
+
+### 1. Compilar las dos versiones
+
+Desde la raíz del repo:
+
+```powershell
+.\compilar.ps1
+```
+
+Compila **PC** y **Android** de una vez (versión de red fija
+`d2port-android-0.8.4`: PC y Android siempre pueden jugar juntas por LAN).
+Si hay un teléfono conectado con el juego ya instalado, actualiza el APK y
+**conserva `data/`** (no la vuelve a copiar).
+
+Opciones: `-Release` (Android en release), `-NoInstall` (solo compilar),
+`-Data <ruta>` (si `data/` no está en la raíz).
+
+### 2. Jugar en PC
+
+El ejecutable queda **en la raíz del repo**, al lado de `data/` y `SDL2.dll`:
+
+```
+<raíz del repo>\d2port.exe     <-- ejecutar este
+<raíz del repo>\data\          <-- archivos del juego
+```
+
+Doble clic o:
+
+```powershell
+.\d2port.exe
+```
+
+> No ejecutes `dist\windows\d2port.exe` para jugar: esa copia es para
+> compartir y no tiene `data/` al lado. El juego busca `data/` en la carpeta
+> del `.exe`.
+
+La resolución se adapta al ancho de la ventana (alto fijo 600): al ensanchar
+se ve más mapa a los costados, sin deformarse. **F11** o **Alt+Enter**:
+pantalla completa.
+
+### 3. Jugar en Android
+
+**Primera instalación** (instala el APK y copia `data/` al teléfono):
+
+```powershell
+.\instalar-android.ps1 -Data .\data
+```
+
+Si `data/` está en la raíz, alcanza con `.\instalar-android.ps1` (la detecta
+sola).
+
+**Actualizar el APK sin recopiar los 2 GB** (conserva `data/`):
+
+```powershell
+.\instalar-android.ps1 -SkipData
+```
+
+Después de la primera vez, `.\compilar.ps1` ya hace la actualización solo si
+el teléfono está conectado.
+
+> Para el teléfono se usa el **APK debug** (`dist\app-debug.apk`): es
+> debuggeable y permite copiar `data/` por `adb run-as`. El release tiene otra
+> firma y no puede recibir la data con el script.
+
+### 4. Jugar juntos (LAN)
+
+PC y Android en la misma red (WiFi o cable). En el PC: **LOCAL NETWORK →
+CREATE GAME**; en el Android: **LOCAL NETWORK → JOIN A GAME**. Se encuentran
+solas y no aparece el error de versión (ambas son `d2port-android-0.8.4`).
+
 ### Screenshots
 
 <table>
