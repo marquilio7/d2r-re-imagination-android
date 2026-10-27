@@ -45,7 +45,9 @@ if (-not [string]::IsNullOrWhiteSpace($Data)) { $androidArgs.Data = $Data }
 if ($LASTEXITCODE -ne 0) { throw "Fallo la compilacion de Android." }
 
 # --- instalar el APK nuevo (si el telefono ya lo tiene) ---
-if (-not $NoInstall) {
+# Solo el debug: es debuggeable (permite copiar data/) y tiene la misma firma
+# que la instalacion actual. El release tiene otra firma y no es debuggeable.
+if (-not $NoInstall -and -not $Release) {
     $adb = Get-Command adb -ErrorAction SilentlyContinue
     if ($adb) {
         $devs = (adb devices) | Select-String -Pattern "\tdevice$"
@@ -53,12 +55,7 @@ if (-not $NoInstall) {
             $installed = (adb shell pm path org.libsdl.app 2>$null) -match "package:"
             if ($installed) {
                 Line "Instalando el APK nuevo en el telefono (data/ se conserva)"
-                $instArgs = @{ SkipData = $true; NoPause = $true }
-                if ($Release) {
-                    $instArgs.Apk = Join-Path $root "dist\app-release.apk"
-                } else {
-                    $instArgs.Apk = Join-Path $root "dist\app-debug.apk"
-                }
+                $instArgs = @{ SkipData = $true; NoPause = $true; Apk = (Join-Path $root "dist\app-debug.apk") }
                 & (Join-Path $root "instalar-android.ps1") @instArgs
             } else {
                 Write-Host "El telefono no tiene el juego instalado: no lo instalo solo (faltaria data/)." -ForegroundColor Yellow
