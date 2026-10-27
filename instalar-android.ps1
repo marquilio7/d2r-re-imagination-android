@@ -51,10 +51,10 @@ if ($Uninstall) {
 # --- resolver APK ---
 if ([string]::IsNullOrWhiteSpace($Apk)) {
     $candidates = @(
-        (Join-Path $PSScriptRoot "app-release.apk"),
         (Join-Path $PSScriptRoot "app-debug.apk"),
-        (Join-Path $PSScriptRoot "release\app-release.apk"),
-        (Join-Path $PSScriptRoot "debug\app-debug.apk")
+        (Join-Path $PSScriptRoot "app-release.apk"),
+        (Join-Path $PSScriptRoot "debug\app-debug.apk"),
+        (Join-Path $PSScriptRoot "release\app-release.apk")
     )
     # tambien buscar recursivamente por si el script esta en la raiz del proyecto
     if (-not ($candidates | Where-Object { Test-Path $_ })) {
@@ -90,13 +90,35 @@ Write-Host "Data: $Data"
 Write-Host "Instalando APK..."
 $installOut = adb install -r "$Apk" 2>&1
 if ($LASTEXITCODE -ne 0 -and ($installOut -notmatch "Success")) {
+    if ($installOut -match "INSTALL_FAILED_UPDATE_INCOMPATIBLE") {
+        Write-Host "Firma incompatible: desinstalando la version anterior..." -ForegroundColor Yellow
+        adb uninstall $Pkg | Out-Null
+        $installOut = adb install "$Apk" 2>&1
+    }
+}
+if ($LASTEXITCODE -ne 0 -and ($installOut -notmatch "Success")) {
     Write-Host $installOut
+    if ($installOut -match "INSTALL_FAILED_USER_RESTRICTED|canceled by user") {
+        Fail "La instalacion fue cancelada en el telefono. Confirma la instalacion en la pantalla del celular y volve a ejecutar."
+    }
     Fail "Fallo la instalacion del APK."
 }
 Write-Host "APK instalado." -ForegroundColor Green
 
-# --- preparar carpetas internas ---
-Write-Host "Preparando carpetas internas de la app..."
+# --- verificar si run-as funciona (solo apps debuggeables) ---
+$runAsOk = $true
+adb shell run-as $Pkg echo ok 2>$null | Out-Null
+if ($LASTEXITCODE -ne 0) { $runAsOk = $false }
+
+if (-not $runAsOk) {
+    Write-Host ""
+    Write-Host "AVISO: la app instalada no es debuggeable (release). No se puede copiar data/ via run-as." -ForegroundColor Yellow
+    Write-Host "Para copiar data/, instala la version debug (app-debug.apk) que es debuggeable." -ForegroundColor Yellow
+    Write-Host "El APK release se instalo correctamente; copia data/ manualmente o usa la version debug." -ForegroundColor Yellow
+    Write-Host ""
+    try { Read-Host "Presiona Enter para cerrar..." } catch { }
+    exit 0
+}
 adb shell run-as $Pkg rm -rf files/data files/save 2>$null | Out-Null
 adb shell run-as $Pkg mkdir -p files/data files/save
 
@@ -132,4 +154,4 @@ Write-Host ""
 Write-Host "Listo. El juego esta instalado. Abrelo desde el launcher del telefono." -ForegroundColor Green
 Write-Host "Para ver el log: adb shell run-as $Pkg cat files/d2port.log" -ForegroundColor Gray
 Write-Host ""
-Read-Host "Presiona Enter para cerrar..."
+try { Read-Host "Presiona Enter para cerrar..." } catch { }

@@ -2,6 +2,13 @@ LOCAL_PATH := $(call my-dir)
 
 PORT_ROOT := $(LOCAL_PATH)/../port
 
+# Versión del código = commit de git (igual que CMakeLists.txt), para que la red
+# solo junte máquinas con la misma versión. Si git no está disponible, "dev".
+D2_GIT_VERSION := $(shell git -C $(PORT_ROOT) rev-parse --short=12 HEAD 2>/dev/null)
+ifeq ($(D2_GIT_VERSION),)
+D2_GIT_VERSION := dev
+endif
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := main
@@ -16,7 +23,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/$(SDL_PATH)/include \
 # char es sin signo por defecto; y las funciones de math.h del sistema difieren
 # en el ultimo bit, por eso se usan las de src/dmath.h.
 LOCAL_CFLAGS := -ffp-contract=off -fsigned-char -Wall -Wextra \
-                -DD2_VERSION=\"88d75f912373\" \
+                -DD2_VERSION=\"$(D2_GIT_VERSION)\" \
                 -DSCREEN_W=1333 -DSCREEN_H=600
 
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
