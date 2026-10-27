@@ -129,7 +129,7 @@ Write-Host "Copiando data/ al telefono (2 GB aprox., puede tardar)..."
 $ErrorActionPreference = "Continue"
 adb shell rm -rf $RemoteTmp 2>$null | Out-Null
 adb push "$Data" $RemoteTmp 2>&1 | Select-Object -Last 1
-if ($LASTEXITCODE -ne 0) { $ErrorActionPreference = "Stop"; Fail "Fallo el adb push de data/." }
+if ($LASTEXITCODE -ne 0) { Write-Host "Aviso: adb push reporto errores, pero continuo..." -ForegroundColor Yellow }
 adb shell run-as $Pkg rm -rf files/data 2>$null | Out-Null
 adb shell run-as $Pkg mkdir -p files/data 2>$null | Out-Null
 if (adb shell test -d "$RemoteTmp/data" 2>$null) {
