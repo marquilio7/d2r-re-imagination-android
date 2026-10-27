@@ -33,34 +33,28 @@ $env:ANDROID_HOME = $Sdk
 $env:ANDROID_NDK_HOME = $Ndk
 $env:PATH = "$Jdk\bin;$env:PATH"
 
-# --- versión del código (misma que el PC: el commit de git) ---
-$ver = "dev"
-try {
-    $v = & git -C $root rev-parse --short=12 HEAD 2>$null
-    if ($v) { $ver = $v.Trim() }
-} catch { }
-$env:D2_GIT_VERSION = $ver
+# --- versión de red fija (tiene que ser IGUAL en PC y Android) ---
+$ver = "d2port-android-0.8.4"
+$env:D2_VERSION_FIXED = $ver
 Write-Host "Version del codigo: $ver" -ForegroundColor Cyan
 
 # escribir la version en un .mk que Android.mk incluye (mas confiable que el env con el daemon de gradle)
 $verMk = Join-Path $root "android\app\jni\src\d2version.mk"
 "D2_GIT_VERSION_FILE := $ver" | Set-Content $verMk -Encoding ASCII
 
-# si cambió la versión, forzar recompilación del código nativo (gradle no mira git).
-# Hay que parar el daemon de gradle porque mantiene lockeados los archivos.
+# si cambió la versión, forzar recompilación del código nativo. Gradle no mira
+# el contenido de d2version.mk para decidir, así que hacemos "clean" (fiable).
 $verFile = Join-Path $root "android\app\jni\src\.d2version"
 $prev = if (Test-Path $verFile) { (Get-Content $verFile -Raw).Trim() } else { "" }
 if ($prev -ne $ver) {
     $gradleBat = Join-Path $root "android\gradlew.bat"
     $androidDir = Join-Path $root "android"
     if (Test-Path $gradleBat) {
+        Write-Host "Cambio la version: limpiando build anterior..." -ForegroundColor Cyan
         Push-Location $androidDir
         & $gradleBat --stop 2>$null | Out-Null
+        & $gradleBat clean 2>&1 | Select-Object -Last 2
         Pop-Location
-    }
-    foreach ($d in @("ndkBuild","merged_native_libs","stripped_native_libs","native_symbol_tables")) {
-        $p = Join-Path $root "android\app\build\intermediates\$d"
-        if (Test-Path $p) { cmd /c "rmdir /s /q `"$p`"" 2>$null }
     }
     $ver | Set-Content $verFile -Encoding ASCII
 }

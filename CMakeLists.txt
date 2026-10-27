@@ -13,11 +13,17 @@ endif()
 # que usa la simulación son las de src/dmath.h (las del sistema difieren en el último bit).
 add_compile_options(-ffp-contract=off -fsigned-char)
 
-# La versión del código (la red solo junta máquinas con la misma): el commit de git, o "dev"
-execute_process(COMMAND git rev-parse --short=12 HEAD WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-                OUTPUT_VARIABLE D2_GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-if(NOT D2_GIT_VERSION)
-  set(D2_GIT_VERSION dev)
+# La versión del código (la red solo junta máquinas con la misma). En este fork
+# se fija con D2_VERSION_FIXED para que PC y Android coincidan siempre; si no
+# está, se usa el commit de git o "dev".
+if(DEFINED ENV{D2_VERSION_FIXED} AND NOT "$ENV{D2_VERSION_FIXED}" STREQUAL "")
+  set(D2_GIT_VERSION "$ENV{D2_VERSION_FIXED}")
+else()
+  execute_process(COMMAND git rev-parse --short=12 HEAD WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                  OUTPUT_VARIABLE D2_GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  if(NOT D2_GIT_VERSION)
+    set(D2_GIT_VERSION dev)
+  endif()
 endif()
 
 if(NOT EMSCRIPTEN)

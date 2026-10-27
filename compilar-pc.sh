@@ -10,6 +10,9 @@ set -euo pipefail
 
 export PATH="/ucrt64/bin:/usr/bin:$PATH"
 
+# Version de red fija: PC y Android tienen que coincidir siempre.
+export D2_VERSION_FIXED="d2port-android-0.8.4"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [[ -f "$SCRIPT_DIR/CMakeLists.txt" ]]; then
     ROOT="$SCRIPT_DIR"

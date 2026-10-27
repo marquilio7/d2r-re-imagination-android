@@ -36,6 +36,8 @@ New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 # --- compilar ---
 Write-Host "Compilando en MSYS2 UCRT64..." -ForegroundColor Cyan
+# Version de red fija: PC y Android tienen que coincidir siempre.
+$env:D2_VERSION_FIXED = "d2port-android-0.8.4"
 $cmd = "export PATH=/ucrt64/bin:/usr/bin:`$PATH; cd '$rootPosix' && bash compilar-pc.sh"
 & $bash -c $cmd
 if ($LASTEXITCODE -ne 0) { throw "La compilacion fallo (exit $LASTEXITCODE)." }
