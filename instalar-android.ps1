@@ -119,7 +119,9 @@ if (-not $runAsOk) {
     try { Read-Host "Presiona Enter para cerrar..." } catch { }
     exit 0
 }
+$ErrorActionPreference = "Continue"
 adb shell run-as $Pkg rm -rf files/data files/save 2>$null | Out-Null
+$ErrorActionPreference = "Stop"
 adb shell run-as $Pkg mkdir -p files/data files/save
 
 # --- copiar data ---
@@ -129,14 +131,16 @@ adb push "$Data" $RemoteTmp 2>&1 | Select-Object -Last 1
 if ($LASTEXITCODE -ne 0) { Fail "Fallo el adb push de data/." }
 
 # el origen del push es $RemoteTmp (adb crea la subcarpeta solo si el destino ya existia; aqui no, asi que esta directo).
-adb shell run-as $Pkg rm -rf files/data
-adb shell run-as $Pkg mkdir -p files/data
+$ErrorActionPreference = "Continue"
+adb shell run-as $Pkg rm -rf files/data 2>$null | Out-Null
+adb shell run-as $Pkg mkdir -p files/data 2>$null | Out-Null
 if (adb shell test -d "$RemoteTmp/data" 2>$null) {
     $srcPath = "$RemoteTmp/data/."
 } else {
     $srcPath = "$RemoteTmp/."
 }
-adb shell run-as $Pkg cp -r $srcPath files/data/
+adb shell run-as $Pkg cp -r $srcPath files/data/ 2>$null | Out-Null
+$ErrorActionPreference = "Stop"
 if ($LASTEXITCODE -ne 0) { Fail "Fallo la copia interna (run-as cp)." }
 
 # verificar
