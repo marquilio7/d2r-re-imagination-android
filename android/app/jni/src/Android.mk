@@ -3,9 +3,10 @@ LOCAL_PATH := $(call my-dir)
 PORT_ROOT := $(LOCAL_PATH)/../port
 
 # Versión del código = commit de git (igual que CMakeLists.txt), para que la red
-# solo junte máquinas con la misma versión. Prioridad: variable de entorno que
-# setea compilar-android.ps1; si no, git; si no, "dev".
-D2_VER := $(D2_GIT_VERSION)
+# solo junte máquinas con la misma versión. compilar-android.ps1 escribe
+# d2version.mk con el hash; si no existe, se intenta git; si no, "dev".
+-include $(LOCAL_PATH)/d2version.mk
+D2_VER := $(D2_GIT_VERSION_FILE)
 ifeq ($(D2_VER),)
 D2_VER := $(shell git -C $(abspath $(PORT_ROOT)) rev-parse --short=12 HEAD 2>/dev/null)
 endif

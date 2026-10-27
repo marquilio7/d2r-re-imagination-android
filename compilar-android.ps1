@@ -42,13 +42,25 @@ try {
 $env:D2_GIT_VERSION = $ver
 Write-Host "Version del codigo: $ver" -ForegroundColor Cyan
 
-# si cambió la versión, forzar recompilación del código nativo (gradle no mira git)
+# escribir la version en un .mk que Android.mk incluye (mas confiable que el env con el daemon de gradle)
+$verMk = Join-Path $root "android\app\jni\src\d2version.mk"
+"D2_GIT_VERSION_FILE := $ver" | Set-Content $verMk -Encoding ASCII
+
+# si cambió la versión, forzar recompilación del código nativo (gradle no mira git).
+# Hay que parar el daemon de gradle porque mantiene lockeados los archivos.
 $verFile = Join-Path $root "android\app\jni\src\.d2version"
 $prev = if (Test-Path $verFile) { (Get-Content $verFile -Raw).Trim() } else { "" }
 if ($prev -ne $ver) {
+    $gradleBat = Join-Path $root "android\gradlew.bat"
+    $androidDir = Join-Path $root "android"
+    if (Test-Path $gradleBat) {
+        Push-Location $androidDir
+        & $gradleBat --stop 2>$null | Out-Null
+        Pop-Location
+    }
     foreach ($d in @("ndkBuild","merged_native_libs","stripped_native_libs","native_symbol_tables")) {
         $p = Join-Path $root "android\app\build\intermediates\$d"
-        if (Test-Path $p) { Remove-Item -Recurse -Force $p -ErrorAction SilentlyContinue }
+        if (Test-Path $p) { cmd /c "rmdir /s /q `"$p`"" 2>$null }
     }
     $ver | Set-Content $verFile -Encoding ASCII
 }

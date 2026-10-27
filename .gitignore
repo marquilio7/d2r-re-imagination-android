@@ -57,6 +57,7 @@ android/app/*.keystore
 android/app/*.jks
 # Version del build (se regenera con compilar-android.ps1)
 android/app/jni/src/.d2version
+android/app/jni/src/d2version.mk
 gmon.out
 *.wav
 SDL2.dll
