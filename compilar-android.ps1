@@ -33,6 +33,26 @@ $env:ANDROID_HOME = $Sdk
 $env:ANDROID_NDK_HOME = $Ndk
 $env:PATH = "$Jdk\bin;$env:PATH"
 
+# --- versión del código (misma que el PC: el commit de git) ---
+$ver = "dev"
+try {
+    $v = & git -C $root rev-parse --short=12 HEAD 2>$null
+    if ($v) { $ver = $v.Trim() }
+} catch { }
+$env:D2_GIT_VERSION = $ver
+Write-Host "Version del codigo: $ver" -ForegroundColor Cyan
+
+# si cambió la versión, forzar recompilación del código nativo (gradle no mira git)
+$verFile = Join-Path $root "android\app\jni\src\.d2version"
+$prev = if (Test-Path $verFile) { (Get-Content $verFile -Raw).Trim() } else { "" }
+if ($prev -ne $ver) {
+    foreach ($d in @("ndkBuild","merged_native_libs","stripped_native_libs","native_symbol_tables")) {
+        $p = Join-Path $root "android\app\build\intermediates\$d"
+        if (Test-Path $p) { Remove-Item -Recurse -Force $p -ErrorAction SilentlyContinue }
+    }
+    $ver | Set-Content $verFile -Encoding ASCII
+}
+
 # --- crear local.properties si no existe ---
 $lp = Join-Path $root "android\local.properties"
 if (-not (Test-Path $lp)) {
@@ -127,4 +147,4 @@ if ($Install) {
 Write-Host ""
 Write-Host "Compilacion Android terminada." -ForegroundColor Green
 Write-Host ""
-Read-Host "Presiona Enter para cerrar..."
+try { Read-Host "Presiona Enter para cerrar..." } catch { }

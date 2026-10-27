@@ -108,12 +108,18 @@ if (-not $NoCopiar) {
     } else {
         $playDir = Split-Path $Data -Parent
         $existingExe = Join-Path $playDir "d2port.exe"
-        if (Test-Path $existingExe) { Copy-Item $existingExe "$existingExe.bak" -Force }
-        Copy-Item $exe $existingExe -Force
-        if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $playDir "SDL2.dll") -Force }
-        Write-Host ""
-        Write-Host "Exe copiado a: $playDir\d2port.exe" -ForegroundColor Green
-        Write-Host "Ejecuta d2port.exe en $playDir para jugar." -ForegroundColor Green
+        try {
+            if (Test-Path $existingExe) { Copy-Item $existingExe "$existingExe.bak" -Force }
+            Copy-Item $exe $existingExe -Force
+            if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $playDir "SDL2.dll") -Force }
+            Write-Host ""
+            Write-Host "Exe copiado a: $playDir\d2port.exe" -ForegroundColor Green
+            Write-Host "Ejecuta d2port.exe en $playDir para jugar." -ForegroundColor Green
+        } catch {
+            Write-Host ""
+            Write-Host "No pude copiar a $playDir (el juego puede estar abierto)." -ForegroundColor Yellow
+            Write-Host "Cerralo y volve a ejecutar, o copia manualmente desde $outDir" -ForegroundColor Yellow
+        }
     }
 } else {
     Write-Host "Binario disponible en: $outDir\d2port.exe" -ForegroundColor Green
@@ -122,4 +128,4 @@ if (-not $NoCopiar) {
 Write-Host ""
 Write-Host "Compilacion terminada." -ForegroundColor Green
 Write-Host ""
-Read-Host "Presiona Enter para cerrar..."
+try { Read-Host "Presiona Enter para cerrar..." } catch { }

@@ -15,7 +15,8 @@ param(
     [string]$Apk = "",
     [string]$Data = "",
     [switch]$Launch,
-    [switch]$Uninstall
+    [switch]$Uninstall,
+    [switch]$SkipData
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,22 +70,24 @@ if ([string]::IsNullOrWhiteSpace($Apk) -or -not (Test-Path $Apk)) {
 Write-Host "APK: $Apk"
 
 # --- resolver data ---
-if ([string]::IsNullOrWhiteSpace($Data)) {
-    $Data = Join-Path $PSScriptRoot "data"
-    if (-not (Test-Path $Data)) {
-        # buscar una carpeta data/ cerca del script
-        $found = Get-ChildItem -Path $PSScriptRoot -Recurse -Directory -Filter "data" -ErrorAction SilentlyContinue |
-            Where-Object { Test-Path (Join-Path $_.FullName "global\palette\act1") } | Select-Object -First 1
-        if ($found) { $Data = $found.FullName }
+if (-not $SkipData) {
+    if ([string]::IsNullOrWhiteSpace($Data)) {
+        $Data = Join-Path $PSScriptRoot "data"
+        if (-not (Test-Path $Data)) {
+            # buscar una carpeta data/ cerca del script
+            $found = Get-ChildItem -Path $PSScriptRoot -Recurse -Directory -Filter "data" -ErrorAction SilentlyContinue |
+                Where-Object { Test-Path (Join-Path $_.FullName "global\palette\act1") } | Select-Object -First 1
+            if ($found) { $Data = $found.FullName }
+        }
     }
+    if (-not (Test-Path $Data)) {
+        Fail "No encontre la carpeta data/. Pasa -Data ruta\a\data"
+    }
+    if (-not (Test-Path (Join-Path $Data "global\palette\act1"))) {
+        Write-Host "Aviso: no veo data\global\palette\act1. La copia puede estar incompleta." -ForegroundColor Yellow
+    }
+    Write-Host "Data: $Data"
 }
-if (-not (Test-Path $Data)) {
-    Fail "No encontre la carpeta data/. Pasa -Data ruta\a\data"
-}
-if (-not (Test-Path (Join-Path $Data "global\palette\act1"))) {
-    Write-Host "Aviso: no veo data\global\palette\act1. La copia puede estar incompleta." -ForegroundColor Yellow
-}
-Write-Host "Data: $Data"
 
 # --- instalar APK ---
 Write-Host "Instalando APK..."
@@ -104,6 +107,13 @@ if ($LASTEXITCODE -ne 0 -and ($installOut -notmatch "Success")) {
     Fail "Fallo la instalacion del APK."
 }
 Write-Host "APK instalado." -ForegroundColor Green
+
+if ($SkipData) {
+    Write-Host "Modo -SkipData: no se copia data/ (se conserva la ya instalada)." -ForegroundColor Cyan
+    if ($Launch) { adb shell am start -n $Activity 2>&1 | Out-Null }
+    try { Read-Host "Presiona Enter para cerrar..." } catch { }
+    exit 0
+}
 
 # --- verificar si run-as funciona (solo apps debuggeables) ---
 $runAsOk = $true
