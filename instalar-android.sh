@@ -47,27 +47,37 @@ if ! adb devices | grep -q $'\tdevice$'; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# raiz del repo (donde esta CMakeLists.txt): ahi se busca data/ por defecto
+if [[ -f "$SCRIPT_DIR/CMakeLists.txt" ]]; then
+    ROOT="$SCRIPT_DIR"
+elif [[ -f "$SCRIPT_DIR/../CMakeLists.txt" ]]; then
+    ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+else
+    ROOT="$SCRIPT_DIR"
+fi
+DIST="$ROOT/dist"
 
-# resolver APK
+# resolver APK (preferir el debug: es debuggeable y permite copiar data/)
 if [[ -z "$APK" ]]; then
-    for c in "$SCRIPT_DIR/app-release.apk" "$SCRIPT_DIR/app-debug.apk" \
-             "$SCRIPT_DIR/release/app-release.apk" "$SCRIPT_DIR/debug/app-debug.apk"; do
+    for c in "$DIST/app-debug.apk" "$SCRIPT_DIR/app-debug.apk" \
+             "$DIST/app-release.apk" "$SCRIPT_DIR/app-release.apk" \
+             "$SCRIPT_DIR/debug/app-debug.apk" "$SCRIPT_DIR/release/app-release.apk"; do
         if [[ -f "$c" ]]; then APK="$c"; break; fi
     done
     if [[ -z "$APK" ]]; then
-        APK=$(find "$SCRIPT_DIR" -name 'app-*.apk' -print -quit 2>/dev/null || true)
+        APK=$(find "$ROOT" -name 'app-*debug*.apk' -print -quit 2>/dev/null || true)
+        [[ -z "$APK" ]] && APK=$(find "$ROOT" -name 'app-*.apk' -print -quit 2>/dev/null || true)
     fi
 fi
 [[ -f "$APK" ]] || { echo "ERROR: APK no encontrado. Usa -a ruta/al/app.apk" >&2; exit 1; }
 echo "APK: $APK"
 
-# resolver data
+# resolver data (por defecto: data/ en la raiz del repo)
 if [[ -z "$DATA" ]]; then
-    for c in "$SCRIPT_DIR/data"; do
-        if [[ -d "$c" ]]; then DATA="$c"; break; fi
-    done
-    if [[ -z "$DATA" ]]; then
-        DATA=$(find "$SCRIPT_DIR" -type d -name data -print -quit 2>/dev/null || true)
+    if [[ -f "$ROOT/data/global/palette/act1" ]]; then
+        DATA="$ROOT/data"
+    else
+        DATA=$(find "$ROOT" -type d -name data -print -quit 2>/dev/null || true)
     fi
 fi
 [[ -d "$DATA" ]] || { echo "ERROR: carpeta data no encontrada. Usa -d ruta/a/data" >&2; exit 1; }
@@ -89,7 +99,8 @@ adb push "$DATA" "$REMOTE_TMP"
 
 adb shell run-as "$PKG" rm -rf files/data
 adb shell run-as "$PKG" mkdir -p files/data
-adb shell run-as "$PKG" cp -r "$REMOTE_TMP/data/." files/data/
+if adb shell test -d "$REMOTE_TMP/data" 2>/dev/null; then SRC="$REMOTE_TMP/data/."; else SRC="$REMOTE_TMP/."; fi
+adb shell run-as "$PKG" cp -r "$SRC" files/data/
 
 COUNT=$(adb shell run-as "$PKG" find files/data -type f | wc -l)
 echo "Archivos copiados: $COUNT"

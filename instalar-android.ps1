@@ -25,6 +25,15 @@ $Pkg = "org.libsdl.app"
 $Activity = "$Pkg/.SDLActivity"
 $RemoteTmp = "/data/local/tmp/d2port-data"
 
+# Raiz del repo (donde esta CMakeLists.txt): ahi se busca data/ por defecto.
+$root = $PSScriptRoot
+if ([string]::IsNullOrWhiteSpace($root)) { $root = (Get-Location).Path }
+if (-not (Test-Path (Join-Path $root "CMakeLists.txt"))) {
+    $parent = Split-Path $root -Parent
+    if (Test-Path (Join-Path $parent "CMakeLists.txt")) { $root = $parent }
+}
+$dist = Join-Path $root "dist"
+
 function Fail($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red; exit 1 }
 
 # --- adb presente ---
@@ -53,14 +62,17 @@ if ($Uninstall) {
 # --- resolver APK ---
 if ([string]::IsNullOrWhiteSpace($Apk)) {
     $candidates = @(
+        (Join-Path $dist "app-debug.apk"),
         (Join-Path $PSScriptRoot "app-debug.apk"),
+        (Join-Path $dist "app-release.apk"),
         (Join-Path $PSScriptRoot "app-release.apk"),
         (Join-Path $PSScriptRoot "debug\app-debug.apk"),
         (Join-Path $PSScriptRoot "release\app-release.apk")
     )
     # tambien buscar recursivamente por si el script esta en la raiz del proyecto
     if (-not ($candidates | Where-Object { Test-Path $_ })) {
-        $found = Get-ChildItem -Path $PSScriptRoot -Recurse -Filter "app-*.apk" -ErrorAction SilentlyContinue | Select-Object -First 1
+        $found = Get-ChildItem -Path $root -Recurse -Filter "app-*.apk" -ErrorAction SilentlyContinue |
+            Sort-Object { if ($_.Name -like "*debug*") { 0 } else { 1 } } | Select-Object -First 1
         if ($found) { $candidates = @($found.FullName) }
     }
     $Apk = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -73,10 +85,11 @@ Write-Host "APK: $Apk"
 # --- resolver data ---
 if (-not $SkipData) {
     if ([string]::IsNullOrWhiteSpace($Data)) {
-        $Data = Join-Path $PSScriptRoot "data"
-        if (-not (Test-Path $Data)) {
-            # buscar una carpeta data/ cerca del script
-            $found = Get-ChildItem -Path $PSScriptRoot -Recurse -Directory -Filter "data" -ErrorAction SilentlyContinue |
+        # por defecto: data/ en la raíz del repo
+        $Data = Join-Path $root "data"
+        if (-not (Test-Path (Join-Path $Data "global\palette\act1"))) {
+            # si no, buscar una carpeta data/ valida en el repo
+            $found = Get-ChildItem -Path $root -Recurse -Directory -Filter "data" -ErrorAction SilentlyContinue |
                 Where-Object { Test-Path (Join-Path $_.FullName "global\palette\act1") } | Select-Object -First 1
             if ($found) { $Data = $found.FullName }
         }
