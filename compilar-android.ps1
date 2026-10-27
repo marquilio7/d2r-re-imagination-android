@@ -126,3 +126,5 @@ if ($Install) {
 
 Write-Host ""
 Write-Host "Compilacion Android terminada." -ForegroundColor Green
+Write-Host ""
+Read-Host "Presiona Enter para cerrar..."

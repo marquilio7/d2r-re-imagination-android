@@ -131,3 +131,5 @@ if ($Launch) {
 Write-Host ""
 Write-Host "Listo. El juego esta instalado. Abrelo desde el launcher del telefono." -ForegroundColor Green
 Write-Host "Para ver el log: adb shell run-as $Pkg cat files/d2port.log" -ForegroundColor Gray
+Write-Host ""
+Read-Host "Presiona Enter para cerrar..."

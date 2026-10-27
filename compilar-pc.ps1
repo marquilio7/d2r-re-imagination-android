@@ -121,3 +121,5 @@ if (-not $NoCopiar) {
 
 Write-Host ""
 Write-Host "Compilacion terminada." -ForegroundColor Green
+Write-Host ""
+Read-Host "Presiona Enter para cerrar..."
