@@ -32514,6 +32514,10 @@ data/global/ui/spells/skltree_w_back.dc6
 data/global/ui/spells/soskillicon.dc6
 data/global/ui/spells/waskillicon.dc6
 data/hd/global/excel/desecratedzones.json
+data/hd/global/sfx/item/item_auto_gold_large_pile.flac
+data/hd/global/sfx/item/item_auto_gold_medium_pile.flac
+data/hd/global/sfx/item/item_auto_gold_small_pile.flac
+data/hd/global/sfx/item/item_auto_gold_tiny_pile.flac
 data/hd/ui/fonts/blizzardglobal-v5_81.ttf
 data/hd/ui/fonts/blizzardglobaltcunicode.ttf
 data/hd/ui/fonts/bljap_v8_3.ttf

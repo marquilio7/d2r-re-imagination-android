@@ -55,7 +55,10 @@ def main():
                 continue
             kind = 'music' if r.get('IsMusic') == '1' else 'sfx'
             where = 'local' if r.get('IsLocal') == '1' else 'global'
-            files.add('data/%s/%s/%s' % (where, kind, f.replace('\\', '/').lower()))
+            path = 'data/%s/%s/%s' % (where, kind, f.replace('\\', '/').lower())
+            if not os.path.exists(os.path.join(root, path)):  # los HD del Resurrected (src/audio.c, read_sound_file)
+                path = 'data/hd/' + path[len('data/'):]
+            files.add(path)
 
     missiles = {r['Missile'].lower(): r for r in read_table(root, 'missiles') if r.get('Missile')}
 

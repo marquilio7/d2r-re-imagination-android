@@ -3601,6 +3601,30 @@ static int item_score(const Item *it)
     return items_defense(it);
 }
 
+/* El sonido de juntar una pila de oro al pasar, como el Resurrected: uno de sus cuatro de pilas
+   (item_auto_gold_tiny/small/med/large_pickup_hd); al caer suena el del oro de siempre (item_gold). -1 = no están (se
+   importó antes): el de siempre. amount: lo que se lleva, con el hallazgo de oro (la pila del Resurrected ya lo trae).
+   shortcut: los cortes del Resurrected no están en ningún archivo (D2R.exe trae el código cifrado); estos (200, 800 y
+   3000) salen de lo que cae en cada dificultad (hasta nivel*12+8 por pila, con los niveles de levels.txt, los jefes
+   x5 y el hallazgo de oro de cada etapa): la mediana es 119 en Normal, 543 en Pesadilla y 1256 en Infierno, así cada
+   dificultad suena un escalón más arriba y la grande queda para jefes y mucho hallazgo (7% en Infierno). Si se miden
+   en el Resurrected (tirando oro de a cantidades exactas), cambiarlos acá */
+static int gold_pickup_sound(int amount)
+{
+    static const char *const k_names[4] = { "item_auto_gold_tiny_pickup_hd", "item_auto_gold_small_pickup_hd",
+                                            "item_auto_gold_med_pickup_hd", "item_auto_gold_large_pickup_hd" };
+    static int ids[4], ready;
+    if (!ready) {
+        ready = 1;
+        for (int i = 0; i < 4; i++) {
+            ids[i] = audio_find(k_names[i]);
+            if (ids[i] >= 0 && !audio_has_file(ids[i]))
+                ids[i] = -1;
+        }
+    }
+    return ids[amount < 200 ? 0 : amount < 800 ? 1 : amount < 3000 ? 2 : 3];
+}
+
 /* Levanta un objeto: las pociones van al cinturón, el equipo se pone solo si
    es mejor que el que tiene (y lo anterior va a la mochila) */
 static int pick_up(Player *p, const Item *it)
@@ -8491,11 +8515,12 @@ static void player_tick(Player *p, float sx, float sy, int sprint, const PlayerI
         return;
     }
 
-    /* El oro se junta solo al pasar por encima */
+    /* El oro se junta solo al pasar por encima (como en el Resurrected), con el sonido de su pila */
     int gold = items_ground_nearest(p->x, p->y, 1.0f, 1);
     if (gold >= 0) {
         const Item *g = items_ground_item(gold, NULL, NULL);
-        audio_play(g->type->drop_sound, p->x, p->y);
+        int snd = gold_pickup_sound(g->amount * (100 + p->bonus[STAT_GOLD_PCT]) / 100);
+        audio_play(snd >= 0 ? snd : g->type->drop_sound, p->x, p->y);
         pick_up(p, g);
         items_ground_remove(gold);
     }

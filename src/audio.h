@@ -21,6 +21,7 @@ int  audio_init(int mode); /* 0 si salió bien; si falla, el juego sigue sin son
 void audio_shutdown(void);
 
 int  audio_find(const char *name); /* fila de sounds.txt, o -1 */
+int  audio_has_file(int sound);    /* 1 si su archivo está (lo trajo el importador) */
 void audio_preload(int sound);     /* decodifica antes (el grupo entero) para no trabar al jugar */
 int  audio_loops(int sound);       /* 1 si se repite hasta que se lo corta (Loop) */
 

@@ -761,6 +761,12 @@ wave 8.</sub>
 
 - The original sounds (`sounds.txt`, `monsounds.txt`), the music of each
   area and the ambient effects.
+- Gold sounds different when it drops and when you pick it up: picking it
+  up plays one of Resurrected's four pile sounds, by the amount (with gold
+  find). Resurrected's exact amounts are not in its files, so the port uses
+  200, 800 and 3,000 gold, chosen so that each difficulty sounds one step
+  bigger. Import again to get those sounds; without them it plays the
+  usual gold sound.
 - The NPC voices and the class lines, in the imported language (English if
   your copy of the game does not have that language's voices).
 

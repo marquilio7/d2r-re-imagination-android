@@ -193,6 +193,7 @@ sound_specs=(
     barbarian_hit_1 barbarian_death_1 amazon_hit_1 amazon_death_1 barbarian_findheart_1
     cursor_button_click cursor_level_up cursor_point_drop cursor_select cursor_questdone cursor_pass
     cursor_barbarian_select cursor_amazon_select item_pickup item_gold cursor_convert_item item_gem
+    item_auto_gold_tiny_pickup_hd item_auto_gold_small_pickup_hd item_auto_gold_med_pickup_hd item_auto_gold_large_pickup_hd
     impact_poison_1 necromancer_taint barbarian_battlecry_state
     sorceress_hit_1 sorceress_death_1 cursor_sorceress_select
     missile:firewall missile:meteor missile:meteorfire missile:meteorexplode missile:frozenorbbolt

@@ -393,6 +393,33 @@ static int load_sounds(void)
     return 0;
 }
 
+/* El archivo de un sonido: los del Resurrected en HD (las pilas de oro al juntarlas, canal items_hd) no están en
+   data/global/sfx sino en data/hd/global/sfx */
+static void hd_path(const SoundDef *d, char *out, size_t cap)
+{
+    snprintf(out, cap, "data/hd/%s", strncmp(d->file, "data/", 5) == 0 ? d->file + 5 : d->file);
+}
+
+static uint8_t *read_sound_file(const SoundDef *d, size_t *size)
+{
+    uint8_t *data = fs_read(d->file, size);
+    if (!data) {
+        char hd[sizeof d->file + 8];
+        hd_path(d, hd, sizeof hd);
+        data = fs_read(hd, size);
+    }
+    return data;
+}
+
+int audio_has_file(int sound)
+{
+    if (sound < 0 || sound >= s_num_defs || s_defs[sound].none)
+        return 0;
+    char hd[sizeof s_defs[0].file + 8];
+    hd_path(&s_defs[sound], hd, sizeof hd);
+    return fs_exists(s_defs[sound].file) || fs_exists(hd);
+}
+
 /* El sonido decodificado (la primera vez lo decodifica), en el hilo de
    trabajos: si otro lo está decodificando, devuelve NULL en vez de esperarlo */
 static Sample *get_sample(int i)
@@ -409,7 +436,7 @@ static Sample *get_sample(int i)
     const SoundDef *d = &s_defs[i];
     Sample *s = NULL;
     size_t size;
-    uint8_t *data = d->none || d->music ? NULL : fs_read(d->file, &size);
+    uint8_t *data = d->none || d->music ? NULL : read_sound_file(d, &size);
     if (!data && !d->none && !d->music && s_log)
         printf("  falta el sonido %s (%s)\n", d->name, d->file);
     if (data) {
