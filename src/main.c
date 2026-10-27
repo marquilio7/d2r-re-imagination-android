@@ -1169,10 +1169,8 @@ int main(int argc, char **argv)
         return 2;
     crash_handler_install();
 
-#ifdef __ANDROID__
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
-#endif
     Uint32 flags = o.headless ? (getenv("D2_FAKE_PAD") ? SDL_INIT_GAMECONTROLLER : 0) /* (los joysticks virtuales de las pruebas) */
                               : (SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
     if (SDL_Init(flags) != 0) {

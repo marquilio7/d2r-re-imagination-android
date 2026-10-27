@@ -50,8 +50,13 @@ if (-not (Test-Path $exe)) { throw "No encontre el .exe esperado en $exe" }
 # copiar a dist/windows/ (para compartir) y a la raiz del repo
 Copy-Item $exe (Join-Path $outDir "d2port.exe") -Force
 if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $outDir "SDL2.dll") -Force }
-Copy-Item $exe (Join-Path $root "d2port.exe") -Force
-if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $root "SDL2.dll") -Force }
+try {
+    Copy-Item $exe (Join-Path $root "d2port.exe") -Force
+    if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $root "SDL2.dll") -Force }
+} catch {
+    Write-Host "No pude actualizar $root\d2port.exe (el juego puede estar abierto)." -ForegroundColor Yellow
+    Write-Host "Cerralo y volve a ejecutar, o copialo desde $outDir" -ForegroundColor Yellow
+}
 
 # --- detectar instalacion de D2R (data original) ---
 function Find-D2RPath {
