@@ -3,22 +3,27 @@
 
 #include <stdint.h>
 
-/* Resolución de Lord of Destruction. Todo se dibuja en un framebuffer de
-   8 bits con paleta, igual que el juego original: es barato para la Pi 3B. */
-#ifndef SCREEN_W
-#define SCREEN_W 800
-#endif
+/* Alto fijo: la interfaz original es de 600 px de alto. El ancho se adapta a
+   la ventana (al arrancar y al redimensionarla), así se ve más mapa a los
+   costados sin deformar nada. */
 #ifndef SCREEN_H
 #define SCREEN_H 600
 #endif
+/* Ancho máximo del framebuffer (para una ventana muy ancha). */
+#ifndef SCREEN_MAX_W
+#define SCREEN_MAX_W 2560
+#endif
+/* Ancho activo, lo fija video_init según la ventana. */
+extern int g_screen_w;
+#define SCREEN_W g_screen_w
 /* Desplazamiento horizontal para centrar la interfaz original de 800 px cuando
-   el viewport se ensancha (Android). 0 si SCREEN_W == 800. */
+   el viewport se ensancha. 0 si SCREEN_W == 800. */
 #ifndef UI_OFF
 #define UI_OFF  ((SCREEN_W - 800) / 2)
 #endif
 
 typedef struct {
-    uint8_t  px[SCREEN_W * SCREEN_H];
+    uint8_t  px[SCREEN_MAX_W * SCREEN_H];
     uint32_t pal[256]; /* ARGB8888 */
 } Framebuffer;
 
@@ -112,6 +117,7 @@ void fb_frame_begin(void);
 typedef struct {
     uint8_t *px; /* de a pedazos: el píxel del mundo (wx, wy) va en (wx mod ancho, wy mod alto) */
     int      valid, wx, wy;
+    int      alloc_w; /* ancho con el que se reservó px (para rehacerla si cambia la ventana) */
 } FbLayer;
 void fb_layer_update(FbLayer *l, int wx, int wy, int redraw, void (*draw)(void *ctx), void *ctx);
 /* Banco de pruebas: convierte el cuadro (con su oscuridad) como para la GPU; ms */

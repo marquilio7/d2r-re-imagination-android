@@ -11,6 +11,10 @@
 
 Framebuffer g_fb;
 
+/* Ancho activo del framebuffer: lo fija video_init según la ventana y se
+   ajusta al redimensionarla. SCREEN_W (en video.h) es este valor. */
+int g_screen_w = 800;
+
 static SDL_Window   *s_win;
 static SDL_Renderer *s_ren;
 static SDL_Texture  *s_tex;
@@ -19,6 +23,7 @@ static int           s_565; /* D2_RGB565: textura de 16 bits (la mitad para subi
 static int           s_hide_cursor;  /* pantalla completa: sin puntero del mouse */
 static SDL_Cursor   *s_blank_cursor; /* transparente: aunque algo lo muestre, no se ve */
 static int           s_presents;
+static int           s_movie_active; /* cinemática: no reajustar el tamaño mientras se reproduce */
 
 /* En la tele (Batocera) no hay mouse. Con KMSDRM, SDL pone el puntero al
    crear la ventana y algunas versiones lo vuelven a mostrar con los primeros
@@ -62,6 +67,19 @@ EM_ASYNC_JS(void, web_next_frame, (void), {
 #else
 #define WEB_FRAME() ((void)0)
 #endif
+
+/* Ancho del framebuffer que corresponde a una ventana ww x wh: alto fijo
+   (SCREEN_H) y el ancho según la proporción de la ventana, para que la imagen
+   llene la ventana sin deformarse y se vea más mapa a los costados. Nunca
+   menos de 800 (el ancho de la interfaz original). */
+static int calc_screen_w(int ww, int wh)
+{
+    if (wh < 1) wh = 1;
+    int sw = (int)((long long)SCREEN_H * ww / wh);
+    if (sw < 800) sw = 800;
+    if (sw > SCREEN_MAX_W) sw = SCREEN_MAX_W;
+    return sw;
+}
 
 int video_init(int headless, int fullscreen, int scale)
 {
@@ -118,6 +136,26 @@ int video_init(int headless, int fullscreen, int scale)
     if (SDL_GetRendererInfo(s_ren, &info) == 0) {
         s_vsync = (info.flags & SDL_RENDERER_PRESENTVSYNC) != 0;
         printf("render: %s%s\n", info.name, s_vsync ? " (vsync)" : "");
+    }
+
+    {
+        /* El tamaño real del lienzo (en Android es la superficie, no 800x600). */
+        int ww = 0, wh = 0;
+        SDL_GetRendererOutputSize(s_ren, &ww, &wh);
+        if (ww <= 0 || wh <= 0)
+            SDL_GetWindowSize(s_win, &ww, &wh);
+#ifdef __ANDROID__
+        /* Si el lienzo no refleja la superficie (algunos drivers), usar la pantalla. */
+        SDL_DisplayMode dm;
+        if (SDL_GetCurrentDisplayMode(0, &dm) == 0 && dm.w > 0 && dm.h > 0) {
+            int dw = dm.w > dm.h ? dm.w : dm.h, dh = dm.w > dm.h ? dm.h : dm.w;
+            if (ww < dw / 2) { ww = dw; wh = dh; }
+        }
+#endif
+        g_screen_w = calc_screen_w(ww, wh);
+        clip_reset(); /* el recorte depende del ancho */
+        printf("pantalla: %dx%d (lienzo %dx%d)\n", g_screen_w, SCREEN_H, ww, wh);
+        fflush(stdout);
     }
 
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
@@ -337,8 +375,35 @@ void video_set_565(int on)
     printf("textura de %d bits\n", on ? 16 : 32);
 }
 
+/* Reajusta el framebuffer si cambió el tamaño de la ventana (alto fijo, ancho
+   según la proporción): recrea la textura y marca las capas para redibujarse. */
+static void video_sync_size(void)
+{
+    if (!s_win || !s_ren || s_movie_active)
+        return;
+    int ww = 0, wh = 0;
+    SDL_GetRendererOutputSize(s_ren, &ww, &wh);
+    if (ww <= 0 || wh <= 0)
+        SDL_GetWindowSize(s_win, &ww, &wh);
+    int sw = calc_screen_w(ww, wh);
+    if (sw == g_screen_w)
+        return;
+    g_screen_w = sw;
+    SDL_RenderSetLogicalSize(s_ren, g_screen_w, SCREEN_H);
+    if (s_tex)
+        SDL_DestroyTexture(s_tex);
+    s_tex = SDL_CreateTexture(s_ren, s_565 ? SDL_PIXELFORMAT_RGB565 : SDL_PIXELFORMAT_ARGB8888,
+                              SDL_TEXTUREACCESS_STREAMING, g_screen_w, SCREEN_H);
+    if (!s_tex && s_565) {
+        s_565 = 0;
+        s_tex = SDL_CreateTexture(s_ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, g_screen_w, SCREEN_H);
+    }
+    clip_reset();
+}
+
 void video_present(void)
 {
+    video_sync_size();
     if (!s_tex)
         return;
     void *pixels;
@@ -390,6 +455,7 @@ int video_movie_begin(int w, int h)
 #endif
     s_movie_w = w;
     s_movie_h = h;
+    s_movie_active = 1;
     SDL_RenderSetLogicalSize(s_ren, 0, 0);
     return 0;
 }
@@ -434,6 +500,7 @@ void video_movie_end(void)
     if (s_movie)
         SDL_DestroyTexture(s_movie);
     s_movie = NULL;
+    s_movie_active = 0;
     if (s_ren)
         SDL_RenderSetLogicalSize(s_ren, SCREEN_W, SCREEN_H);
 }
@@ -624,7 +691,7 @@ int pal_load_d2(const char *act)
 /* ---- Recorte ---- */
 
 /* El rectángulo que ocupa el recorte (para no recorrer lo que queda afuera) */
-static int s_clip_bx0, s_clip_by0, s_clip_bx1 = SCREEN_W - 1, s_clip_by1 = SCREEN_H - 1;
+static int s_clip_bx0, s_clip_by0, s_clip_bx1 = SCREEN_MAX_W - 1, s_clip_by1 = SCREEN_H - 1;
 
 static void clip_update_bounds(void)
 {
@@ -899,7 +966,7 @@ typedef struct {
 } DarkJob;
 static DarkJob s_dark[DARK_JOBS];
 static int     s_full_id;
-static uint8_t s_umask[SCREEN_H][SCREEN_W / 8]; /* lo dibujado después de la oscuridad */
+static uint8_t s_umask[SCREEN_H][SCREEN_MAX_W / 8]; /* lo dibujado después de la oscuridad */
 static int     s_umask_used;
 static uint8_t s_level_of[DARK_STEPS];
 static uint8_t s_level_r[DARK_JOBS][DARK_STEPS];
@@ -1275,7 +1342,7 @@ static void dark_resolve_slow(int y, int a, int b)
         done = (m[x >> 3] >> (x & 7)) & 1;
     if (done)
         return;
-    uint8_t tmp[SCREEN_W];
+    uint8_t tmp[SCREEN_MAX_W];
     for (int q = 0; q < s_ndark; q++) {
         const DarkJob *j = &s_dark[q];
         if (y > j->max_y)
@@ -1360,7 +1427,7 @@ static void convert_row(int y, void *dst, int is16)
     for (int i = 1; i < nq; i++)
         apart |= jq[i]->x0[y] <= jq[i - 1]->x1[y];
     if (apart) { /* pedidos que se pisan (no debería pasar): la fila oscurecida aparte */
-        uint8_t tmp[SCREEN_W];
+        uint8_t tmp[SCREEN_MAX_W];
         memcpy(tmp, src, SCREEN_W);
         for (int i = 0; i < nq; i++)
             dark_apply_row(jq[i], y, tmp, neon_check(), 0, SCREEN_W - 1);
@@ -1672,7 +1739,7 @@ void fb_blit_scaled(const uint8_t *px, int w, int h, int x, int y, int dw, int d
     const uint8_t *lut = level >= 0 && level < LIGHT_LEVELS - 1 ? g_light[level] : NULL;
     /* De qué columna sale cada una, calculado una vez (dividir en cada píxel
        era lo caro de los botones del HUD en la Pi) */
-    int cols[SCREEN_W];
+    int cols[SCREEN_MAX_W];
     int ncol = dw < SCREEN_W ? dw : SCREEN_W;
     for (int i = 0; i < ncol; i++)
         cols[i] = i * w / dw;
@@ -1870,10 +1937,16 @@ static void layer_row(const FbLayer *l, uint8_t *buf, int y, int x0, int x1, int
 
 void fb_layer_update(FbLayer *l, int wx, int wy, int redraw, void (*draw)(void *ctx), void *ctx)
 {
+    /* La ventana cambió de ancho: la capa se rehace entera con el nuevo paso. */
+    if (l->alloc_w != SCREEN_W) {
+        l->alloc_w = SCREEN_W;
+        l->valid = 0;
+        redraw = 1;
+    }
     if (!l->px)
-        l->px = malloc((size_t)SCREEN_W * SCREEN_H);
+        l->px = malloc((size_t)SCREEN_MAX_W * SCREEN_H);
     if (!s_layer_tmp)
-        s_layer_tmp = malloc((size_t)SCREEN_W * SCREEN_H);
+        s_layer_tmp = malloc((size_t)SCREEN_MAX_W * SCREEN_H);
     if (!l->px || !s_layer_tmp) { /* sin memoria: directo en la pantalla, como siempre */
         fb_fill_clip(0);
         draw(ctx);

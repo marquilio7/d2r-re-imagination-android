@@ -28,8 +28,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/$(SDL_PATH)/include \
 # char es sin signo por defecto; y las funciones de math.h del sistema difieren
 # en el ultimo bit, por eso se usan las de src/dmath.h.
 LOCAL_CFLAGS := -ffp-contract=off -fsigned-char -Wall -Wextra \
-                -DD2_VERSION=\"$(D2_VER)\" \
-                -DSCREEN_W=1333 -DSCREEN_H=600
+                -DD2_VERSION=\"$(D2_VER)\"
 
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
 LOCAL_CFLAGS += -fno-tree-slp-vectorize

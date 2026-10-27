@@ -14,7 +14,8 @@
 param(
     [string]$Msys2 = "C:\msys64",
     [string]$Data = "",
-    [switch]$NoCopiar
+    [switch]$NoCopiar,
+    [switch]$NoPause
 )
 
 $ErrorActionPreference = "Stop"
@@ -130,4 +131,4 @@ if (-not $NoCopiar) {
 Write-Host ""
 Write-Host "Compilacion terminada." -ForegroundColor Green
 Write-Host ""
-try { Read-Host "Presiona Enter para cerrar..." } catch { }
+if (-not $NoPause) { try { Read-Host "Presiona Enter para cerrar..." } catch { } }

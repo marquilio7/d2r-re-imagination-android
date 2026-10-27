@@ -16,7 +16,8 @@ param(
     [string]$Data = "",
     [switch]$Launch,
     [switch]$Uninstall,
-    [switch]$SkipData
+    [switch]$SkipData,
+    [switch]$NoPause
 )
 
 $ErrorActionPreference = "Stop"
@@ -111,7 +112,7 @@ Write-Host "APK instalado." -ForegroundColor Green
 if ($SkipData) {
     Write-Host "Modo -SkipData: no se copia data/ (se conserva la ya instalada)." -ForegroundColor Cyan
     if ($Launch) { adb shell am start -n $Activity 2>&1 | Out-Null }
-    try { Read-Host "Presiona Enter para cerrar..." } catch { }
+    if (-not $NoPause) { try { Read-Host "Presiona Enter para cerrar..." } catch { } }
     exit 0
 }
 
@@ -126,7 +127,7 @@ if (-not $runAsOk) {
     Write-Host "Para copiar data/, instala la version debug (app-debug.apk) que es debuggeable." -ForegroundColor Yellow
     Write-Host "El APK release se instalo correctamente; copia data/ manualmente o usa la version debug." -ForegroundColor Yellow
     Write-Host ""
-    try { Read-Host "Presiona Enter para cerrar..." } catch { }
+    if (-not $NoPause) { try { Read-Host "Presiona Enter para cerrar..." } catch { } }
     exit 0
 }
 $ErrorActionPreference = "Continue"
@@ -171,4 +172,4 @@ Write-Host ""
 Write-Host "Listo. El juego esta instalado. Abrelo desde el launcher del telefono." -ForegroundColor Green
 Write-Host "Para ver el log: adb shell run-as $Pkg cat files/d2port.log" -ForegroundColor Gray
 Write-Host ""
-try { Read-Host "Presiona Enter para cerrar..." } catch { }
+if (-not $NoPause) { try { Read-Host "Presiona Enter para cerrar..." } catch { } }

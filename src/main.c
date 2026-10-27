@@ -473,7 +473,7 @@ static void video_rec_open(void)
              getenv("D2_FFMPEG") ? getenv("D2_FFMPEG") : "ffmpeg", SCREEN_W, SCREEN_H, TICK_RATE,
              getenv("D2_VIDEO_CRF") ? atoi(getenv("D2_VIDEO_CRF")) : 28, out); /* (D2_VIDEO_CRF: la calidad, más alto = más chico) */
     s_video = popen(cmd, "w");
-    s_video_buf = malloc((size_t)SCREEN_W * SCREEN_H * 4);
+    s_video_buf = malloc((size_t)SCREEN_MAX_W * SCREEN_H * 4);
     s_video_every = getenv("D2_VIDEO_EVERY") && atoi(getenv("D2_VIDEO_EVERY")) > 0 ? atoi(getenv("D2_VIDEO_EVERY")) : 1;
     if (!s_video || !s_video_buf)
         fprintf(stderr, "no pude grabar el video %s\n", out);

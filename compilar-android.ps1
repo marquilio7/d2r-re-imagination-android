@@ -9,6 +9,7 @@ param(
     [switch]$Release,
     [switch]$Install,
     [string]$Data = "",
+    [switch]$NoPause,
     [string]$Jdk = "D:\J\tools\jdk17",
     [string]$Sdk = "C:\Users\yo\AppData\Local\Android\Sdk",
     [string]$Ndk = "C:\Users\yo\AppData\Local\Android\Sdk\ndk\25.1.8937393"
@@ -153,4 +154,4 @@ if ($Install) {
 Write-Host ""
 Write-Host "Compilacion Android terminada." -ForegroundColor Green
 Write-Host ""
-try { Read-Host "Presiona Enter para cerrar..." } catch { }
+if (-not $NoPause) { try { Read-Host "Presiona Enter para cerrar..." } catch { } }

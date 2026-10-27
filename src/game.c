@@ -14337,7 +14337,7 @@ static void draw_wall_tile(const Dt1Tile *t, int sx, int sy)
    un rombo, así que primero se acotan las filas y después las columnas. */
 /* Lo que se ve: el rectángulo del recorte (con la pantalla partida, el de
    cada mitad), así cada mitad recorre solo sus tiles */
-static int s_vis_x0, s_vis_y0, s_vis_x1 = SCREEN_W - 1, s_vis_y1 = SCREEN_H - 1;
+static int s_vis_x0, s_vis_y0, s_vis_x1 = SCREEN_MAX_W - 1, s_vis_y1 = SCREEN_H - 1;
 
 /* Filas del mapa con algún tile que puede caer en ese rectángulo: el tile
    (tx, ty) está en y = (tx + ty) * TILE_H / 2 + oy, con tx entre 0 y el ancho */
