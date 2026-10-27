@@ -50,5 +50,10 @@ android/.gradle/
 android/app/build/
 # SDL2: se descarga aparte (ver README / android/). No se sube.
 android/app/jni/SDL/
+# Junction local para que ndk-build resuelva los paths (no se sube)
+android/app/jni/port/
+# Keystore de firma (no se sube: cada uno genera el suyo)
+android/app/*.keystore
+android/app/*.jks
 gmon.out
 *.wav
