@@ -16903,31 +16903,31 @@ static void draw_value(int cx, int y, int value, int max)
 static void draw_hud_single(const Player *p)
 {
     fb_fill_rect(0, SCREEN_H - 48, SCREEN_W, 48, COL(R_GRAY, 0));
-    ui_frame(CTRL_PANEL, 0, 0, PANEL_TOP);
-    ui_frame(CTRL_PANEL, 1, 165, MIDDLE_TOP);
-    ui_frame(CTRL_PANEL, 2, 293, MIDDLE_TOP);
-    ui_frame(CTRL_PANEL, 3, 421, MIDDLE_TOP);
-    ui_frame(CTRL_PANEL, 4, 549, MIDDLE_TOP);
-    ui_frame(CTRL_PANEL, 5, 683, PANEL_TOP);
+    ui_frame(CTRL_PANEL, 0, UI_OFF + 0, PANEL_TOP);
+    ui_frame(CTRL_PANEL, 1, UI_OFF + 165, MIDDLE_TOP);
+    ui_frame(CTRL_PANEL, 2, UI_OFF + 293, MIDDLE_TOP);
+    ui_frame(CTRL_PANEL, 3, UI_OFF + 421, MIDDLE_TOP);
+    ui_frame(CTRL_PANEL, 4, UI_OFF + 549, MIDDLE_TOP);
+    ui_frame(CTRL_PANEL, 5, UI_OFF + 683, PANEL_TOP);
 
-    draw_orb(p->poison_ticks > 0 ? 2 : 0, 29, PANEL_TOP + 11, (float)p->hp / p->hp_max, 0);
-    ui_frame("panel/overlap", 0, 28, PANEL_TOP + 11);
-    draw_orb(1, 689, PANEL_TOP + 11, p->mana_max > 0 ? (float)p->mana / p->mana_max : 0.0f, 0);
-    ui_frame("panel/overlap", 1, 690, PANEL_TOP + 7);
+    draw_orb(p->poison_ticks > 0 ? 2 : 0, UI_OFF + 29, PANEL_TOP + 11, (float)p->hp / p->hp_max, 0);
+    ui_frame("panel/overlap", 0, UI_OFF + 28, PANEL_TOP + 11);
+    draw_orb(1, UI_OFF + 689, PANEL_TOP + 11, p->mana_max > 0 ? (float)p->mana / p->mana_max : 0.0f, 0);
+    ui_frame("panel/overlap", 1, UI_OFF + 690, PANEL_TOP + 7);
 
-    draw_stamina_exp(p, 273, PANEL_TOP + 77, 256, PANEL_TOP + 65);
-    ui_frame("panel/runbutton", p->running ? 2 : 0, 255, PANEL_TOP + 74);
-    ui_frame("panel/menubutton", 0, 392, PANEL_TOP + 64);
-    draw_belt_slots(p, 422, PANEL_TOP + 64);
-    draw_skill_up(p, 563, PANEL_TOP + 66);
+    draw_stamina_exp(p, UI_OFF + 273, PANEL_TOP + 77, UI_OFF + 256, PANEL_TOP + 65);
+    ui_frame("panel/runbutton", p->running ? 2 : 0, UI_OFF + 255, PANEL_TOP + 74);
+    ui_frame("panel/menubutton", 0, UI_OFF + 392, PANEL_TOP + 64);
+    draw_belt_slots(p, UI_OFF + 422, PANEL_TOP + 64);
+    draw_skill_up(p, UI_OFF + 563, PANEL_TOP + 66);
     if (p->stat_points > 0)
-        ui_frame("panel/level", (s_ticks / 10) % 2, 206, PANEL_TOP + 66);
+        ui_frame("panel/level", (s_ticks / 10) % 2, UI_OFF + 206, PANEL_TOP + 66);
 
-    draw_button(p, 0, 117, PANEL_TOP + 56, SKILL_SIZE);
-    draw_button(p, 2, 117, PANEL_TOP + 4, SKILL_SIZE);
-    draw_button(p, 1, 635, PANEL_TOP + 56, SKILL_SIZE);
-    draw_button(p, 3, 635, PANEL_TOP + 4, SKILL_SIZE);
-    draw_pet_bar(p, 117, PANEL_TOP + 2 - PET_ROW, 0); /* arriba de X y A */
+    draw_button(p, 0, UI_OFF + 117, PANEL_TOP + 56, SKILL_SIZE);
+    draw_button(p, 2, UI_OFF + 117, PANEL_TOP + 4, SKILL_SIZE);
+    draw_button(p, 1, UI_OFF + 635, PANEL_TOP + 56, SKILL_SIZE);
+    draw_button(p, 3, UI_OFF + 635, PANEL_TOP + 4, SKILL_SIZE);
+    draw_pet_bar(p, UI_OFF + 117, PANEL_TOP + 2 - PET_ROW, 0); /* arriba de X y A */
 }
 
 /* Dos jugadores: cada mitad lleva su estatua con un orbe partido (vida a la
@@ -17434,8 +17434,8 @@ static void draw_orb_numbers(void)
 {
     if (s_num_local == 1) {
         const Player *p = &s_pl[s_local[0]];
-        draw_value(69, PANEL_TOP - 16, p->hp, p->hp_max);
-        draw_value(729, PANEL_TOP - 16, p->mana, p->mana_max);
+        draw_value(UI_OFF + 69, PANEL_TOP - 16, p->hp, p->hp_max);
+        draw_value(UI_OFF + 729, PANEL_TOP - 16, p->mana, p->mana_max);
         return;
     }
     for (int right = 0; right < 2; right++) {
@@ -17462,9 +17462,9 @@ static void draw_hud_body(void)
         draw_effects(p1, 117 + half, MIDDLE_TOP - 3, STRIP_TO - STRIP_FROM);
         draw_effects(p2, SCREEN_W - 117 - half, MIDDLE_TOP - 3, STRIP_TO - STRIP_FROM);
     }
-    draw_merc_portrait(p1, 10, 10);
+    draw_merc_portrait(p1, UI_OFF + 10, 10);
     if (s_num_local > 1)
-        draw_merc_portrait(p2, SCREEN_W - 56, 10);
+        draw_merc_portrait(p2, UI_OFF + 800 - 56, 10);
     if (s_num_players > s_num_local)
         draw_party_list();
     for (int k = 0; k < s_num_local; k++) { /* (los paneles de los de esta máquina) */

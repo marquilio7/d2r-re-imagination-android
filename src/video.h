@@ -5,8 +5,17 @@
 
 /* Resolución de Lord of Destruction. Todo se dibuja en un framebuffer de
    8 bits con paleta, igual que el juego original: es barato para la Pi 3B. */
+#ifndef SCREEN_W
 #define SCREEN_W 800
+#endif
+#ifndef SCREEN_H
 #define SCREEN_H 600
+#endif
+/* Desplazamiento horizontal para centrar la interfaz original de 800 px cuando
+   el viewport se ensancha (Android). 0 si SCREEN_W == 800. */
+#ifndef UI_OFF
+#define UI_OFF  ((SCREEN_W - 800) / 2)
+#endif
 
 typedef struct {
     uint8_t  px[SCREEN_W * SCREEN_H];
@@ -40,6 +49,8 @@ extern uint8_t *g_blend[BLEND_COUNT];
 extern uint32_t g_text_rgb[TEXT_COLORS];
 
 int  video_init(int headless, int fullscreen, int scale);
+void video_window_size(int *w, int *h);
+void video_viewport(int *x, int *y, int *w, int *h);
 void video_shutdown(void);
 int  video_has_vsync(void);
 void video_present(void);

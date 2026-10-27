@@ -160,7 +160,7 @@ static void draw_pad(void)
     /* Las líneas hacia lo que hace cada uno (debajo de los botones) */
     for (unsigned k = 0; k < sizeof k_pad / sizeof k_pad[0]; k++) {
         const PadLabel *l = &k_pad[k];
-        int bx = l->right ? 556 : SCREEN_W - 556, by = l->y + font_height(2) / 2;
+        int bx = l->right ? SCREEN_W / 2 + 220 : SCREEN_W / 2 - 220, by = l->y + font_height(2) / 2;
         fb_line(bx + (l->right ? -16 : 16), by, ox + l->ax, oy + l->ay, line);
         fb_ellipse(ox + l->ax, oy + l->ay, 2, 2, COL(R_GOLD, 13));
     }
@@ -179,7 +179,7 @@ static void draw_pad(void)
     /* Las explicaciones: la insignia del botón y lo que hace */
     for (unsigned k = 0; k < sizeof k_pad / sizeof k_pad[0]; k++) {
         const PadLabel *l = &k_pad[k];
-        int bx = l->right ? 556 : SCREEN_W - 556, cy = l->y + font_height(2) / 2, half = 12;
+        int bx = l->right ? SCREEN_W / 2 + 220 : SCREEN_W / 2 - 220, cy = l->y + font_height(2) / 2, half = 12;
         switch (l->badge) {
         case BADGE_FACE:
             face_button(bx, cy, 11, l->face, l->name);
@@ -217,14 +217,14 @@ static void draw_pad(void)
         { 1, "B", "Cerrar" },
     };
     for (unsigned k = 0; k < sizeof k_panel / sizeof k_panel[0]; k++) {
-        int col = (int)k % 2, row = (int)k / 2, x = 70 + col * 340, y = 446 + row * 30;
+        int col = (int)k % 2, row = (int)k / 2, x = UI_OFF + 70 + col * 340, y = 446 + row * 30;
         face_button(x, y + font_height(2) / 2, 10, k_panel[k].b, k_panel[k].name);
         text_fit(x + 18, y, 300, k_panel[k].what, 2, COL(R_GRAY, 14), 0);
     }
-    pill(70 - 14, 506, 28, 16, edge, part);
-    text_centered_v(70, 514, "RB", 1, COL(R_GRAY, 15));
-    text_fit(70 + 22, 506, 260, "Al suelo", 2, COL(R_GRAY, 14), 0);
-    text_fit(400, 506, 330, "Cruceta: recorrer", 2, COL(R_GRAY, 14), 0);
+    pill(UI_OFF + 70 - 14, 506, 28, 16, edge, part);
+    text_centered_v(UI_OFF + 70, 514, "RB", 1, COL(R_GRAY, 15));
+    text_fit(UI_OFF + 70 + 22, 506, 260, "Al suelo", 2, COL(R_GRAY, 14), 0);
+    text_fit(UI_OFF + 400, 506, 330, "Cruceta: recorrer", 2, COL(R_GRAY, 14), 0);
     font_draw_centered(SCREEN_W / 2, 532, "Jugador 1: el primer joystick que se use   -   Jugador 2: el segundo", 1,
                        COL(R_STONE, 13));
 }
@@ -317,7 +317,7 @@ static const struct { const char *what, *p1, *p2; } k_keys[] = {
 
 static void draw_keys(void)
 {
-    const int c1 = 452, c2 = 652, top = 132, step = 28;
+    const int c1 = SCREEN_W / 3, c2 = SCREEN_W * 2 / 3, top = 132, step = 28;
     font_draw(48, 102, "ACCIÓN", 2, COL(R_GOLD, 13));
     font_draw_centered(c1, 102, "JUGADOR 1", 2, COL(R_GOLD, 15));
     font_draw_centered(c2, 102, "JUGADOR 2", 2, COL(R_GOLD, 15));
@@ -332,10 +332,10 @@ static void draw_keys(void)
     }
     int y = top + n * step + 12;
     fb_hline(60, SCREEN_W - 60, y - 6, COL(R_GOLD, 6));
-    keycap(150, y, "Esc");
-    text_fit(150 + keycap_w("Esc") + 10, y + 3, 200, "Pausa (los dos)", 2, COL(R_GRAY, 14), 0);
-    font_draw(430, y + 3, "Mouse:", 2, COL(R_GOLD, 13));
-    text_fit(430 + font_width("Mouse:", 2) + 8, y + 3, SCREEN_W - 40 - (430 + font_width("Mouse:", 2) + 8),
+    keycap(UI_OFF + 100, y, "Esc");
+    text_fit(UI_OFF + 100 + keycap_w("Esc") + 10, y + 3, 260, "Pausa (los dos)", 2, COL(R_GRAY, 14), 0);
+    font_draw(SCREEN_W / 2, y + 3, "Mouse:", 2, COL(R_GOLD, 13));
+    text_fit(SCREEN_W / 2 + font_width("Mouse:", 2) + 8, y + 3, SCREEN_W - 40 - (SCREEN_W / 2 + font_width("Mouse:", 2) + 8),
              "con el clic, el jugador 1 camina", 2, COL(R_GRAY, 14), 0);
 }
 

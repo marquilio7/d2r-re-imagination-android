@@ -143,6 +143,27 @@ int video_init(int headless, int fullscreen, int scale)
     return 0;
 }
 
+void video_window_size(int *w, int *h)
+{
+    if (s_win)
+        SDL_GetWindowSize(s_win, w, h);
+    else {
+        *w = SCREEN_W;
+        *h = SCREEN_H;
+    }
+}
+
+void video_viewport(int *x, int *y, int *w, int *h)
+{
+    SDL_Rect r;
+    if (s_ren) {
+        SDL_RenderGetViewport(s_ren, &r);
+        *x = r.x; *y = r.y; *w = r.w; *h = r.h;
+    } else {
+        *x = 0; *y = 0; *w = SCREEN_W; *h = SCREEN_H;
+    }
+}
+
 void video_shutdown(void)
 {
     if (s_blank_cursor)

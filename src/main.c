@@ -1169,6 +1169,10 @@ int main(int argc, char **argv)
         return 2;
     crash_handler_install();
 
+#ifdef __ANDROID__
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+#endif
     Uint32 flags = o.headless ? (getenv("D2_FAKE_PAD") ? SDL_INIT_GAMECONTROLLER : 0) /* (los joysticks virtuales de las pruebas) */
                               : (SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
     if (SDL_Init(flags) != 0) {
@@ -1252,6 +1256,10 @@ int main(int argc, char **argv)
 #endif
     if (s_restart) { /* otra vez, sin las cinemáticas del principio */
         fflush(NULL);
+#ifdef __ANDROID__
+        setenv("D2_NO_CINEMA", "1", 1);
+        fprintf(stderr, "idioma cambiado: reiniciá la app para aplicarlo\n");
+#else
 #ifdef _WIN32
         _putenv("D2_NO_CINEMA=1");
         _execv(argv[0], (const char *const *)argv);
@@ -1261,6 +1269,7 @@ int main(int argc, char **argv)
         execv(argv[0], argv);
 #endif
         fprintf(stderr, "no pude volver a arrancar el juego\n");
+#endif
     }
     return rc;
 }

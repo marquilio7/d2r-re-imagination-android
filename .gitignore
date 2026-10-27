@@ -42,5 +42,13 @@ prof/
 # Registros de las pruebas y la configuración local de Claude Code
 *.log
 .claude/
+
+# Configuración local de Android (ruta del SDK de cada máquina)
+android/local.properties
+# Intermediarios de build de Android (se regeneran)
+android/.gradle/
+android/app/build/
+# SDL2: se descarga aparte (ver README / android/). No se sube.
+android/app/jni/SDL/
 gmon.out
 *.wav

@@ -733,18 +733,18 @@ static void draw_logo(void)
 {
     /* La mitad negra y el fuego de cada lado, animados como en el original */
     int f = (int)(s_ticks / 2) % 30;
-    ui_frame_anchor("frontend/d2logoblackleft", f, 400, 120, BLEND_75);
-    ui_frame_anchor("frontend/d2logoblackright", f, 400, 120, BLEND_75);
-    ui_frame_anchor("frontend/d2logofireleft", f, 400, 120, BLEND_ADD);
-    ui_frame_anchor("frontend/d2logofireright", f, 400, 120, BLEND_ADD);
+    ui_frame_anchor("frontend/d2logoblackleft", f, SCREEN_W / 2, 120, BLEND_75);
+    ui_frame_anchor("frontend/d2logoblackright", f, SCREEN_W / 2, 120, BLEND_75);
+    ui_frame_anchor("frontend/d2logofireleft", f, SCREEN_W / 2, 120, BLEND_ADD);
+    ui_frame_anchor("frontend/d2logofireright", f, SCREEN_W / 2, 120, BLEND_ADD);
 }
 
 static void draw_main(void)
 {
-    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, 0, 0);
+    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, UI_OFF, 0);
     draw_logo();
     for (int i = 0; i < NUM_ITEMS; i++)
-        draw_wide_button(264, 262 + i * 35, k_items[i], i == s_sel);
+        draw_wide_button((SCREEN_W - 272) / 2, 262 + i * 35, k_items[i], i == s_sel);
 
     char buf[64];
     snprintf(buf, sizeof buf, tr("Joysticks conectados: %d"), input_num_pads());
@@ -760,7 +760,7 @@ static void draw_main(void)
 /* Lugares de la lista: 2 columnas de 3 filas dentro del marco */
 static void slot_box(int i, int *x, int *y)
 {
-    *x = 37 + (i % 2) * 272;
+    *x = UI_OFF + 128 + (i % 2) * 272;
     *y = 133 + (i / 2) * 95;
 }
 
@@ -768,11 +768,11 @@ static void slot_box(int i, int *x, int *y)
    está creando, la clase que se elige */
 static void draw_slots_dual(void)
 {
-    ui_grid("charselect/characterselectscreenexp", 0, 12, 4, 0, 0);
+    ui_grid("charselect/characterselectscreenexp", 0, 12, 4, UI_OFF, 0);
     char text[96];
-    font_draw_centered(317, 34, "JUGADORES: ELIJAN SUS PERSONAJES", FONT_EXOCET, COL(R_GOLD, 15));
+    font_draw_centered(SCREEN_W / 2, 34, "JUGADORES: ELIJAN SUS PERSONAJES", FONT_EXOCET, COL(R_GOLD, 15));
     if (s_eco_game)
-        font_draw_centered(317, 90, "ECO DEL ODIO", FONT_EXOCET, COL(R_RED, 14));
+        font_draw_centered(SCREEN_W / 2, 90, "ECO DEL ODIO", FONT_EXOCET, COL(R_RED, 14));
     int bw = 272, bh = 90, w0, h0, w1, h1;
     if (ui_frame_size("charselect/charselectbox", 0, &w0, &h0) && ui_frame_size("charselect/charselectbox", 1, &w1, &h1)) {
         bw = 256 + w1;
@@ -848,14 +848,14 @@ static void draw_slots_dual(void)
             tag_x -= lw + 10;
         }
     }
-    font_draw_centered(317, 530, "A: jugar     X: borrar     B: volver", 2, COL(R_GRAY, 14));
+    font_draw_centered(SCREEN_W / 2, 530, "A: jugar     X: borrar     B: volver", 2, COL(R_GRAY, 14));
     int ready = (s_pk[0].stage == PK_READY) + (s_pk[1].stage == PK_READY);
     if (ready == 1 && s_note_ticks <= 0) { /* (el aviso va en el mismo lugar) */
         snprintf(text, sizeof text, tr("Esperando al jugador %d"), s_pk[0].stage == PK_READY ? 2 : 1);
-        font_draw_centered(317, 112, text, 2, COL(R_GRAY, 15));
+        font_draw_centered(SCREEN_W / 2, 112, text, 2, COL(R_GRAY, 15));
     }
     if (s_note_ticks > 0)
-        font_draw_centered(317, 112, s_note, font_fit(s_note, 2, 600), COL(R_RED, 13));
+        font_draw_centered(SCREEN_W / 2, 112, s_note, font_fit(s_note, 2, 600), COL(R_RED, 13));
 }
 
 static void draw_slots(void)
@@ -864,15 +864,15 @@ static void draw_slots(void)
         draw_slots_dual();
         return;
     }
-    ui_grid("charselect/characterselectscreenexp", 0, 12, 4, 0, 0);
+    ui_grid("charselect/characterselectscreenexp", 0, 12, 4, UI_OFF, 0);
     char text[96];
     if (s_players > 1)
         snprintf(text, sizeof text, tr("JUGADOR %d: ELEGÍ TU PERSONAJE"), s_picking + 1);
     else
         snprintf(text, sizeof text, "%s", tr("ELEGÍ TU PERSONAJE"));
-    font_draw_centered(317, 34, text, FONT_EXOCET, COL(R_GOLD, 15));
+    font_draw_centered(SCREEN_W / 2, 34, text, FONT_EXOCET, COL(R_GOLD, 15));
     if (s_eco_game) /* (en rojo, el del odio) */
-        font_draw_centered(317, 90, "ECO DEL ODIO", FONT_EXOCET, COL(R_RED, 14));
+        font_draw_centered(SCREEN_W / 2, 90, "ECO DEL ODIO", FONT_EXOCET, COL(R_RED, 14));
 
     for (int i = 0; i < SAVE_SLOTS; i++) {
         int x, y;
@@ -903,9 +903,9 @@ static void draw_slots(void)
             font_draw(x + 92, y + 46, "A: crear un personaje", 1, COL(R_STONE, 12));
         }
     }
-    font_draw_centered(317, 530, "A: jugar     X: borrar     B: volver", 2, COL(R_GRAY, 14));
+    font_draw_centered(SCREEN_W / 2, 530, "A: jugar     X: borrar     B: volver", 2, COL(R_GRAY, 14));
     if (s_note_ticks > 0)
-        font_draw_centered(317, 112, s_note, font_fit(s_note, 2, 600), COL(R_RED, 13));
+        font_draw_centered(SCREEN_W / 2, 112, s_note, font_fit(s_note, 2, 600), COL(R_RED, 13));
 }
 
 /* Contorno del personaje elegido: doble línea dorada con las esquinas
@@ -935,8 +935,8 @@ static void draw_select_outline(int x, int y, int w, int h)
 
 static void draw_class_choice(void)
 {
-    ui_grid("charselect/characterselectscreenexp", 0, 12, 4, 0, 0);
-    font_draw_centered(317, 34, "ELEGÍ LA CLASE DEL PERSONAJE", FONT_EXOCET, COL(R_GOLD, 15));
+    ui_grid("charselect/characterselectscreenexp", 0, 12, 4, UI_OFF, 0);
+    font_draw_centered(SCREEN_W / 2, 34, "ELEGÍ LA CLASE DEL PERSONAJE", FONT_EXOCET, COL(R_GOLD, 15));
     const char *const(*desc)[2] = k_class_desc;
     /* Dentro del marco (de 46 a 591): hasta 5 en una fila; si son más, en
        dos filas (la de abajo centrada) */
@@ -945,7 +945,7 @@ static void draw_class_choice(void)
     for (int c = 0; c < NUM_CLASSES; c++) {
         int row = c / per_row, col = c % per_row;
         int in_row = row == rows - 1 ? NUM_CLASSES - row * per_row : per_row;
-        int x = 46 + (545 - in_row * bw) / 2 + col * bw, y = two ? 116 + row * 174 : 160, cx = x + bw / 2;
+        int x = UI_OFF + 46 + (545 - in_row * bw) / 2 + col * bw, y = two ? 116 + row * 174 : 160, cx = x + bw / 2;
         if (c == s_class_sel)
             draw_select_outline(x + 1, y + 8, bw - 2, two ? 168 : 178);
         game_draw_class_hero(c, cx, y + (two ? 108 : 120), (int)s_ticks);
@@ -956,15 +956,15 @@ static void draw_class_choice(void)
     }
     char text[48];
     snprintf(text, sizeof text, tr("Partida %d"), s_slot_sel + 1);
-    font_draw_centered(317, 110, text, 2, COL(R_GRASS, 13));
-    font_draw_centered(317, 530, "A: crear     B: volver", 2, COL(R_GRAY, 14));
+    font_draw_centered(SCREEN_W / 2, 110, text, 2, COL(R_GRASS, 13));
+    font_draw_centered(SCREEN_W / 2, 530, "A: crear     B: volver", 2, COL(R_GRAY, 14));
 }
 
 /* El panel de cinemáticas de la expansión (cinematicsselectionexp: siete
    filas y el botón de abajo, 326x427), sobre la pantalla principal */
 static void draw_cinema(void)
 {
-    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, 0, 0);
+    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, UI_OFF, 0);
     draw_logo();
     const int x = (SCREEN_W - 326) / 2, y = 140;
     ui_frame("frontend/cinematicsselectionexp", 0, x, y);
@@ -990,17 +990,17 @@ static void draw_delete(void)
 {
     draw_slots();
     const SlotInfo *info = &s_info[s_slot_sel];
-    ui_dark_box(150, 200, 334, 150);
+    ui_dark_box((SCREEN_W - 334) / 2, 200, 334, 150);
     char text[96];
     snprintf(text, sizeof text, tr("¿Borrar %s de nivel %d?"), game_class_name(info->cls), info->level);
-    font_draw_centered(317, 220, text, 3, COL(R_GOLD, 15));
-    font_draw_centered(317, 250, "Se pierde todo: nivel, equipo y oro", 1, COL(R_GRAY, 14));
+    font_draw_centered(SCREEN_W / 2, 220, text, 3, COL(R_GOLD, 15));
+    font_draw_centered(SCREEN_W / 2, 250, "Se pierde todo: nivel, equipo y oro", 1, COL(R_GRAY, 14));
     static const char *const opts[2] = { "SÍ, BORRAR", "NO" };
     for (int i = 0; i < 2; i++) {
         int y = 280 + i * 30;
-        font_draw_centered(317, y, opts[i], FONT_EXOCET, i == s_delete_sel ? COL(R_RED, 14) : COL(R_GRAY, 13));
+        font_draw_centered(SCREEN_W / 2, y, opts[i], FONT_EXOCET, i == s_delete_sel ? COL(R_RED, 14) : COL(R_GRAY, 13));
         if (i == s_delete_sel)
-            draw_pentagrams(317, y + font_height(FONT_EXOCET) / 2, font_width(opts[i], FONT_EXOCET), 22);
+            draw_pentagrams(SCREEN_W / 2, y + font_height(FONT_EXOCET) / 2, font_width(opts[i], FONT_EXOCET), 22);
     }
 }
 
@@ -1008,9 +1008,9 @@ static void draw_delete(void)
    en las fuentes del original salen de la .ttf del Resurrected) */
 static void draw_languages(void)
 {
-    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, 0, 0);
+    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, UI_OFF, 0);
     int h = 70 + LANG_COUNT * 24 + 40, y0 = (SCREEN_H - h) / 2;
-    ui_dark_box(220, y0, 360, h);
+    ui_dark_box((SCREEN_W - 360) / 2, y0, 360, h);
     font_draw_centered(SCREEN_W / 2, y0 + 16, "IDIOMA", FONT_EXOCET, COL(R_GOLD, 15));
     for (int i = 0; i < LANG_COUNT; i++) {
         int y = y0 + 56 + i * 24;
@@ -1034,32 +1034,32 @@ static void draw_languages(void)
 static void draw_difficulty(void)
 {
     draw_slots();
-    ui_dark_box(150, 180, 334, 200);
-    font_draw_centered(317, 196, "ELEGÍ LA DIFICULTAD", FONT_EXOCET, COL(R_GOLD, 15));
+    ui_dark_box((SCREEN_W - 334) / 2, 180, 334, 200);
+    font_draw_centered(SCREEN_W / 2, 196, "ELEGÍ LA DIFICULTAD", FONT_EXOCET, COL(R_GOLD, 15));
     for (int i = 0; i < 3; i++) {
         int y = 240 + i * 34, open = i <= s_diff_max;
-        font_draw_centered(317, y, k_diffs[i], FONT_EXOCET,
+        font_draw_centered(SCREEN_W / 2, y, k_diffs[i], FONT_EXOCET,
                            !open ? COL(R_STONE, 6) : i == s_diff_sel ? COL(R_GOLD, 15) : COL(R_GRAY, 13));
         if (i == s_diff_sel)
-            draw_pentagrams(317, y + font_height(FONT_EXOCET) / 2, font_width(k_diffs[i], FONT_EXOCET), 22);
+            draw_pentagrams(SCREEN_W / 2, y + font_height(FONT_EXOCET) / 2, font_width(k_diffs[i], FONT_EXOCET), 22);
     }
     if (s_diff_max < 2)
-        font_draw_centered(317, 334, "Se abre al vencer a Baal en la anterior", 1, COL(R_STONE, 12));
+        font_draw_centered(SCREEN_W / 2, 334, "Se abre al vencer a Baal en la anterior", 1, COL(R_STONE, 12));
     /* (en violeta, el color del terror) */
-    font_draw_centered(317, 348, s_terror ? "Izq. / der.: zonas de terror SÍ" : "Izq. / der.: zonas de terror NO", 1,
+    font_draw_centered(SCREEN_W / 2, 348, s_terror ? "Izq. / der.: zonas de terror SÍ" : "Izq. / der.: zonas de terror NO", 1,
                        s_terror ? g_text_shift[11][COL(R_GRAY, 15)] : COL(R_STONE, 12));
-    font_draw_centered(317, 362, "A: jugar     B: volver", 1, COL(R_GRAY, 14));
+    font_draw_centered(SCREEN_W / 2, 362, "A: jugar     B: volver", 1, COL(R_GRAY, 14));
 }
 
 /* Un menú como el principal (el fondo, el logo y los botones de piedra con los pentagramas): arriba,
    lo que se eligió antes; abajo de los botones, qué es el marcado (renglones separados por \n) */
 static void draw_choice(const char *title, uint8_t title_col, const char *const *opts, int n, int sel, const char *info)
 {
-    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, 0, 0);
+    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, UI_OFF, 0);
     draw_logo();
     font_draw_centered(SCREEN_W / 2, 233, title, FONT_EXOCET, title_col);
     for (int i = 0; i < n; i++)
-        draw_wide_button(264, 262 + i * 35, opts[i], i == sel);
+        draw_wide_button((SCREEN_W - 272) / 2, 262 + i * 35, opts[i], i == sel);
     int y = 262 + n * 35 + 12;
     while (info && *info) {
         char line[160];
@@ -1148,9 +1148,9 @@ static void draw_find(void)
 /* La sala de espera: los jugadores de todas las máquinas y la dificultad */
 static void draw_lobby(void)
 {
-    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, 0, 0);
+    ui_grid("frontend/gameselectscreenexp", 0, 12, 4, UI_OFF, 0);
     int host = net_role() == NET_HOST;
-    ui_dark_box(150, 140, 500, 380);
+    ui_dark_box((SCREEN_W - 500) / 2, 140, 500, 380);
     font_draw_centered(SCREEN_W / 2, 156, host ? "TU PARTIDA EN LA RED" : "SALA DE ESPERA", FONT_EXOCET, COL(R_GOLD, 15));
     if (s_eco_game) /* (en rojo, el del odio) */
         font_draw_centered(SCREEN_W / 2, 386, "ECO DEL ODIO", FONT_EXOCET, COL(R_RED, 14));
@@ -1200,7 +1200,7 @@ void menu_render(void)
     case MS_FIND:   draw_find(); break;
     case MS_LOBBY:  draw_lobby(); break;
     case MS_CONTROLS:
-        ui_grid("frontend/gameselectscreenexp", 0, 12, 4, 0, 0);
+        ui_grid("frontend/gameselectscreenexp", 0, 12, 4, UI_OFF, 0);
         controls_draw();
         break;
     }

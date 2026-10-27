@@ -50,6 +50,11 @@ void compat_start(void)
 
 #else
 #include <sys/stat.h>
+#ifdef __ANDROID__
+#include <SDL.h>
+#include <SDL_system.h>
+#include <unistd.h>
+#endif
 
 int compat_mkdir(const char *path)
 {
@@ -68,5 +73,12 @@ FILE *compat_tmpfile(void)
 
 void compat_start(void)
 {
+#ifdef __ANDROID__
+    /* En Android, el directorio de trabajo es la raiz del sistema: nos movemos
+       a la carpeta de archivos de la app, donde van data/ y save/. */
+    const char *dir = SDL_AndroidGetInternalStoragePath();
+    if (dir && dir[0])
+        chdir(dir);
+#endif
 }
 #endif
