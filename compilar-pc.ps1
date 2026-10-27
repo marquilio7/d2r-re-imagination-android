@@ -40,6 +40,37 @@ if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $outDir "SDL2.dll") -Force }
 Copy-Item $exe (Join-Path $root "d2port.exe") -Force
 if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $root "SDL2.dll") -Force }
 
+# --- detectar instalacion de D2R via registro (para importar si falta data/) ---
+function Find-D2RPath {
+    $roots = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+    )
+    foreach ($r in $roots) {
+        if (-not (Test-Path $r)) { continue }
+        Get-ChildItem $r -ErrorAction SilentlyContinue | ForEach-Object {
+            $p = Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue
+            if ($p.DisplayName -match 'Diablo II Resurrected') {
+                if ($p.InstallLocation -and (Test-Path $p.InstallLocation)) {
+                    return $p.InstallLocation
+                }
+            }
+        }
+    }
+    # rutas comunes como fallback
+    foreach ($p in @("D:\J\Diablo II Resurrected","C:\Program Files (x86)\Diablo II Resurrected","C:\Program Files\Diablo II Resurrected")) {
+        if (Test-Path (Join-Path $p ".build.info")) { return $p }
+    }
+    return $null
+}
+
+$d2rPath = Find-D2RPath
+if ($d2rPath) {
+    Write-Host "D2R detectado en: $d2rPath" -ForegroundColor Green
+} else {
+    Write-Host "No se detecto D2R instalado." -ForegroundColor Yellow
+}
+
 # --- detectar carpeta data/ ---
 if ([string]::IsNullOrWhiteSpace($Data)) {
     $candidates = @()
@@ -79,6 +110,11 @@ if ([string]::IsNullOrWhiteSpace($Data)) {
     } else {
         Write-Host ""
         Write-Host "No detecte ninguna carpeta data/ valida." -ForegroundColor Yellow
+        if ($d2rPath) {
+            Write-Host "Tenes D2R en: $d2rPath" -ForegroundColor Cyan
+            Write-Host "Para generar data/, ejecuta el importador desde el release de Windows:" -ForegroundColor Cyan
+            Write-Host "  d2port-importar.exe --idioma esMX --juego `"$d2rPath`"" -ForegroundColor Gray
+        }
         $Data = "D:\J\d2port\data"
         try { $d = Read-Host "Ruta de la carpeta data/ (o Enter para saltear)"; if ($d) { $Data = $d } } catch { }
     }
