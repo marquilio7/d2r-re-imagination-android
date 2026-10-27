@@ -128,10 +128,15 @@ adb shell rm -rf $RemoteTmp 2>$null
 adb push "$Data" $RemoteTmp 2>&1 | Select-Object -Last 1
 if ($LASTEXITCODE -ne 0) { Fail "Fallo el adb push de data/." }
 
-# el origen del push es $RemoteTmp\data (adb crea la subcarpeta). Copiamos su contenido.
+# el origen del push es $RemoteTmp (adb crea la subcarpeta solo si el destino ya existia; aqui no, asi que esta directo).
 adb shell run-as $Pkg rm -rf files/data
 adb shell run-as $Pkg mkdir -p files/data
-adb shell run-as $Pkg cp -r "$RemoteTmp/data/." files/data/
+if (adb shell test -d "$RemoteTmp/data" 2>$null) {
+    $srcPath = "$RemoteTmp/data/."
+} else {
+    $srcPath = "$RemoteTmp/."
+}
+adb shell run-as $Pkg cp -r $srcPath files/data/
 if ($LASTEXITCODE -ne 0) { Fail "Fallo la copia interna (run-as cp)." }
 
 # verificar
