@@ -56,6 +56,7 @@
 /* Pantalla partida: cada jugador queda a esta fracción del camino entre el
    centro y el borde de la pantalla, en la dirección del otro jugador. */
 #define SPLIT_FACTOR 0.5f
+#define SPLIT_TILT   0.698f /* lo más que se inclina la línea de la pantalla partida desde la vertical (40°) */
 
 #define MELEE_RANGE       2.2f  /* distancia (subtiles) para elegir a quién pegar */
 #define RESPAWN_SECONDS   3     /* después de morir, se reaparece en el pueblo */
@@ -569,9 +570,9 @@ static Player    s_pl[MAX_PLAYERS];
 static int  s_local[MAX_LOCAL] = { 0, 1 };
 static int  s_num_local = 1;
 /* Lo que define dónde van los paneles de cada jugador, igual en todas las máquinas de una partida en red: cuántos
-   juegan en su máquina (1 o 2), su lugar en ella y, con dos, si el primero está a la derecha del otro (sus paneles
-   van a la derecha: lay_update) */
-static int  s_lay_n[MAX_PLAYERS], s_lay_slot[MAX_PLAYERS], s_lay_swap[MAX_PLAYERS], s_lay_owner[MAX_PLAYERS];
+   juegan en su máquina (1 o 2) y su lugar en ella (con dos, el primero siempre a la izquierda y el segundo a la
+   derecha: sus paneles no cambian de lado aunque se crucen) */
+static int  s_lay_n[MAX_PLAYERS], s_lay_slot[MAX_PLAYERS], s_lay_owner[MAX_PLAYERS];
 static int  s_net_local; /* 1 = s_local lo puso la red */
 static int  s_net_world; /* en red: el mundo se arma de nuevo con la semilla del anfitrión (game_start_slots) */
 static int  s_zb_wait_zone = -1; /* la zona que espera a sus DT1 para empezar a armarse (zones_tick) */
@@ -779,7 +780,6 @@ static int  meets_item(const Player *p, const Item *it);
 static int  equip_slot_for(const Player *p, const ItemType *t);
 static int  panel_x(const Player *p);
 static int  lay_alone(const Player *p);
-static void lay_update(void);
 static int  stash_side(const Player *p);
 static int  nav_nearest(int count, int sel, int dx, int dy, void (*rect)(const void *, int, int *, int *, int *, int *),
                         const void *ctx);
@@ -2190,7 +2190,6 @@ void game_start_slots(int num_players, const int *slots, const int *classes)
         for (int i = 0; i < MAX_PLAYERS; i++) {
             s_lay_n[i] = i < s_num_local ? s_num_local : 1;
             s_lay_slot[i] = i < s_num_local ? i : 0;
-            s_lay_swap[i] = 0;
             s_lay_owner[i] = i < s_num_local ? 0 : 1000 + i;
         }
     }
@@ -13215,7 +13214,7 @@ void game_net_begin(const NetStart *ns, const int *local_slots, int *slots, int 
             s_local[s_num_local++] = i;
         }
         /* (cuántos son de su máquina y su lugar entre ellos: lo mismo en todas) */
-        s_lay_n[i] = s_lay_slot[i] = s_lay_swap[i] = 0;
+        s_lay_n[i] = s_lay_slot[i] = 0;
         s_lay_owner[i] = ns->owner[i];
         for (int j = 0; j < ns->num_players; j++)
             if (ns->owner[j] == ns->owner[i]) {
@@ -13821,7 +13820,6 @@ int game_tick(const InputState *in)
                 s_den_light = 1; /* (como al limpiarla: la cueva se ilumina) */
         }
     }
-    lay_update(); /* (de qué lado van los paneles con dos en una máquina) */
     if (s_hash_every > 0 && s_ticks % (uint32_t)s_hash_every == 0) /* D2_HASH=N: el resumen del estado cada N ticks */
         printf("HASH t%u %016llx (%d unidades, rng %08x)\n", s_ticks, (unsigned long long)game_state_hash(), units_count(), s_rng);
     s_ticks++;
@@ -15072,34 +15070,12 @@ static int lay_alone(const Player *p)
     return s_lay_n[player_index(p)] <= 1;
 }
 
-/* ¿Sus paneles van a la derecha? Solo, el inventario a la derecha (como el original); con dos, del lado de su
-   vista: el que está más a la derecha, a la derecha */
+/* ¿Sus paneles van a la derecha? Solo, el inventario a la derecha (como el original); con dos, el segundo de la
+   máquina (su mitad de la pantalla partida es la derecha) */
 static int lay_right(const Player *p)
 {
     int i = player_index(p);
-    return s_lay_n[i] <= 1 || (s_lay_slot[i] == 1) != (s_lay_swap[i] != 0);
-}
-
-/* Con dos en una máquina, de qué lado está cada uno (cómo se parte la pantalla: la línea va perpendicular a la
-   recta que los une, así que el que está más a la izquierda en pantalla tiene la mitad izquierda). Con un margen
-   de 3 subtiles, para que los paneles no salten de un lado al otro mientras están parejos. En la lógica, con las
-   posiciones de la partida: lo mismo en todas las máquinas. */
-static void lay_update(void)
-{
-    for (int a = 0; a < s_num_players; a++) {
-        if (s_lay_n[a] < 2 || s_lay_slot[a] != 0)
-            continue;
-        for (int b = 0; b < s_num_players; b++) {
-            if (b == a || s_lay_owner[b] != s_lay_owner[a] || s_lay_slot[b] != 1) /* (el otro de su máquina) */
-                continue;
-            float d = (s_pl[b].x - s_pl[b].y) - (s_pl[a].x - s_pl[a].y); /* (en pantalla, x crece con x - y) */
-            if (d < -3.0f)
-                s_lay_swap[a] = s_lay_swap[b] = 1;
-            else if (d > 3.0f)
-                s_lay_swap[a] = s_lay_swap[b] = 0;
-            break;
-        }
-    }
+    return s_lay_n[i] <= 1 || s_lay_slot[i] == 1;
 }
 
 static int panel_x(const Player *p)
@@ -18247,24 +18223,43 @@ static void render_frame(float alpha)
         return;
     }
 
-    /* Cámara compartida mientras los dos entran en pantalla; si se alejan,
-       la pantalla se parte con una línea perpendicular a la recta que los une.
-       En el punto de corte las dos cámaras coinciden, así no hay salto. */
+    /* Cámara compartida mientras los dos entran en pantalla; si se alejan, la pantalla se parte. Medianamente
+       dinámica: el primero siempre a la izquierda y el segundo a la derecha (así cada uno tiene sus paneles y su
+       interfaz siempre del mismo lado, aunque se crucen), y la línea se inclina hacia donde está el otro pero
+       hasta SPLIT_TILT de la vertical. Entre compartida y partida se pasa de a poco (s_split_t): si se separan
+       estando cruzados, cada uno se desliza a su mitad en vez de saltar. */
     float dx = sx[lb] - sx[la], dy = sy[lb] - sy[la];
     float dist = sqrtf(dx * dx + dy * dy);
-    float nx = 1.0f, ny = 0.0f, k = 0.0f;
+    float nx = 1.0f, ny = 0.0f, k = 0.0f, mx = 1.0f, my = 0.0f, km = SCREEN_W * 0.5f * SPLIT_FACTOR;
     if (dist > 0.001f) {
         nx = dx / dist;
         ny = dy / dist;
         float ex = fabsf(nx) > 1e-4f ? (SCREEN_W * 0.5f) / fabsf(nx) : 1e9f;
         float ey = fabsf(ny) > 1e-4f ? (SCREEN_H * 0.5f) / fabsf(ny) : 1e9f;
-        k = fminf(ex, ey) * SPLIT_FACTOR;
+        k = fminf(ex, ey) * SPLIT_FACTOR; /* (hasta dónde entran los dos en una sola cámara) */
+        /* La dirección de la división: hacia la derecha (el primero a la izquierda), inclinada como mucho SPLIT_TILT */
+        mx = fabsf(nx);
+        my = ny;
+        if (mx < cosf(SPLIT_TILT)) {
+            mx = cosf(SPLIT_TILT);
+            my = (ny < 0.0f ? -1.0f : 1.0f) * sinf(SPLIT_TILT);
+        }
+        float emx = (SCREEN_W * 0.5f) / mx, emy = fabsf(my) > 1e-4f ? (SCREEN_H * 0.5f) / fabsf(my) : 1e9f;
+        km = fminf(emx, emy) * SPLIT_FACTOR;
     }
+    static float s_split_t; /* 0 = cámara compartida, 1 = partida (de a poco: unos 12 cuadros) */
+    float want = dist * 0.5f > k ? 1.0f : 0.0f;
+    s_split_t += want > s_split_t ? fminf(0.08f, want - s_split_t) : -fminf(0.08f, s_split_t - want);
+    float t = s_split_t;
+    /* Cuánto se corre la cámara de cada uno desde su jugador: compartida, al medio de los dos; partida, cada uno a
+       km del centro hacia su lado; en el medio, la mezcla */
+    float o1x = dx * 0.5f * (1.0f - t) + mx * km * t, o1y = dy * 0.5f * (1.0f - t) + my * km * t;
+    float o2x = -dx * 0.5f * (1.0f - t) - mx * km * t, o2y = -dy * 0.5f * (1.0f - t) - my * km * t;
 
-    s_split = dist * 0.5f > k;
-    s_split_nx = nx;
-    s_split_ny = ny;
-    if (dist * 0.5f <= k) {
+    s_split = t > 0.0f;
+    s_split_nx = mx;
+    s_split_ny = my;
+    if (t <= 0.0f) {
         float cx = (sx[la] + sx[lb]) * 0.5f, cy = (sy[la] + sy[lb]) * 0.5f;
         render_world(cx, cy, alpha);
         draw_darkness(cx, cy, sx, sy, -1);
@@ -18278,9 +18273,9 @@ static void render_frame(float alpha)
             s_view_y[i] = SCREEN_H / 2.0f + sy[i] - cy;
         }
     } else {
-        float c1x = sx[la] + nx * k, c1y = sy[la] + ny * k;
-        float c2x = sx[lb] - nx * k, c2y = sy[lb] - ny * k;
-        clip_half_plane(SCREEN_W / 2.0f, SCREEN_H / 2.0f, nx, ny, -1);
+        float c1x = sx[la] + o1x, c1y = sy[la] + o1y;
+        float c2x = sx[lb] + o2x, c2y = sy[lb] + o2y;
+        clip_half_plane(SCREEN_W / 2.0f, SCREEN_H / 2.0f, mx, my, -1);
         render_world(c1x, c1y, alpha);
         draw_darkness(c1x, c1y, sx, sy, la);
         PART2(0, bossfx_shade(c1x, c1y, alpha, la); overlays_draw(c1x, c1y, overlay_pos));
@@ -18288,7 +18283,7 @@ static void render_frame(float alpha)
         PART2(1, draw_item_labels(c1x, c1y));
         PART2(2, draw_prompts(c1x, c1y); draw_npc_news(c1x, c1y));
         PART2(3, draw_view_automap(c1x, c1y, la));
-        clip_half_plane(SCREEN_W / 2.0f, SCREEN_H / 2.0f, nx, ny, +1);
+        clip_half_plane(SCREEN_W / 2.0f, SCREEN_H / 2.0f, mx, my, +1);
         render_world(c2x, c2y, alpha);
         draw_darkness(c2x, c2y, sx, sy, lb);
         PART2(0, bossfx_shade(c2x, c2y, alpha, lb); overlays_draw(c2x, c2y, overlay_pos));
@@ -18297,11 +18292,11 @@ static void render_frame(float alpha)
         PART2(2, draw_prompts(c2x, c2y); draw_npc_news(c2x, c2y));
         PART2(3, draw_view_automap(c2x, c2y, lb));
         clip_reset();
-        PART2(4, draw_divider(nx, ny, dist * 0.5f - k));
-        s_view_x[la] = SCREEN_W / 2.0f - nx * k;
-        s_view_y[la] = SCREEN_H / 2.0f - ny * k;
-        s_view_x[lb] = SCREEN_W / 2.0f + nx * k;
-        s_view_y[lb] = SCREEN_H / 2.0f + ny * k;
+        PART2(4, draw_divider(mx, my, t * fmaxf(dist * 0.5f - k, 12.0f)));
+        s_view_x[la] = SCREEN_W / 2.0f - o1x;
+        s_view_y[la] = SCREEN_H / 2.0f - o1y;
+        s_view_x[lb] = SCREEN_W / 2.0f - o2x;
+        s_view_y[lb] = SCREEN_H / 2.0f - o2y;
     }
     PART2(0, bossfx_draw());
     draw_hud();
