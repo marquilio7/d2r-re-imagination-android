@@ -59,3 +59,5 @@ android/app/*.jks
 android/app/jni/src/.d2version
 gmon.out
 *.wav
+SDL2.dll
+d2port.exe
