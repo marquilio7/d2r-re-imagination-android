@@ -10,12 +10,17 @@ $ErrorActionPreference = "Stop"
 $bash = Join-Path $Msys2 "usr\bin\bash.exe"
 if (-not (Test-Path $bash)) { throw "No encontre MSYS2 en $Msys2. Instala MSYS2 o pasa -Msys2." }
 
-# pasar el script a la ruta POSIX de MSYS2
+# la fuente esta en la carpeta padre de dist/ (o en esta misma si se copio a la raiz)
 $root = $PSScriptRoot
+if (-not (Test-Path (Join-Path $root "CMakeLists.txt"))) {
+    $parent = Split-Path $root -Parent
+    if (Test-Path (Join-Path $parent "CMakeLists.txt")) { $root = $parent }
+}
 if ([string]::IsNullOrWhiteSpace($root)) { $root = (Get-Location).Path }
 $drive = $root.Substring(0,1).ToLower()
 $rest = $root.Substring(2) -replace '\\','/'
 $rootPosix = "/$drive$rest"
+$distDir = $PSScriptRoot
 $scriptPosix = "$rootPosix/compilar-pc.sh"
 
 Write-Host "Compilando en MSYS2 UCRT64..." -ForegroundColor Cyan
@@ -26,8 +31,12 @@ if ($ec -ne 0) { throw "La compilacion fallo (exit $ec)." }
 
 $exe = Join-Path $root "build-pc\d2port.exe"
 if (Test-Path $exe) {
+    # copiar el binario y SDL2.dll a la carpeta del script (dist/) para compartir
+    Copy-Item $exe (Join-Path $distDir "d2port.exe") -Force
+    $sdl = "C:\msys64\ucrt64\bin\SDL2.dll"
+    if (Test-Path $sdl) { Copy-Item $sdl (Join-Path $distDir "SDL2.dll") -Force }
     Write-Host ""
-    Write-Host "Listo: $exe" -ForegroundColor Green
+    Write-Host "Listo: $(Join-Path $distDir 'd2port.exe')" -ForegroundColor Green
     Write-Host "Para jugar: copia d2port.exe + SDL2.dll a una carpeta con data/ y save/."
 } else {
     Write-Host "No encontre el .exe esperado. Revisa la salida." -ForegroundColor Yellow

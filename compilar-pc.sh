@@ -6,7 +6,12 @@ set -euo pipefail
 # MSYS2 UCRT64: asegurar que cmake/gcc esten en PATH
 export PATH="/ucrt64/bin:/usr/bin:$PATH"
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ -f "$SCRIPT_DIR/CMakeLists.txt" ]]; then
+    ROOT="$SCRIPT_DIR"
+else
+    ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 BUILD="$ROOT/build-pc"
 SDL2_DIR="/ucrt64/lib/cmake/SDL2"
 
@@ -37,4 +42,8 @@ cmake --build "$BUILD" --target d2port -j"$(nproc)" 2>&1 | tail -20
 
 echo ""
 echo "Listo. Binario en: $BUILD/d2port.exe"
+# copiar a la carpeta del script para compartir
+cp -f "$BUILD/d2port.exe" "$(dirname "$0")/d2port.exe" 2>/dev/null || true
+cp -f /ucrt64/bin/SDL2.dll "$(dirname "$0")/SDL2.dll" 2>/dev/null || true
+echo "Copiado a: $(dirname "$0")/d2port.exe"
 echo "Para jugar, copia d2port.exe + SDL2.dll a una carpeta con data/ y save/."
